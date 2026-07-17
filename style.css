@@ -122,6 +122,7 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 .no-entries { padding: 38px 0; color: var(--muted); text-align: center; }
 
 @media (max-width: 720px) {
+  html { font-size: 17px; }
   .app-header { min-height: 78px; padding: 14px 18px; }
   .app-header .eyebrow { display: none; }
   .version-label { max-width: 170px; font-size: .64rem; }
