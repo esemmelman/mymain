@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MyMain</title>
-  <link rel="stylesheet" href="style.css?v=1.1.1">
+  <link rel="stylesheet" href="style.css?v=1.2.0">
 </head>
 <body>
   <header class="app-header">
@@ -14,7 +14,7 @@
     </div>
     <div class="header-meta">
       <span id="connectionStatus" class="status" data-state="loading">Connecting...</span>
-      <span class="version-label">v1.1.1 · Larger mobile text</span>
+      <span class="version-label">v1.2.0 · Friendly Links nodes</span>
     </div>
   </header>
 
@@ -115,6 +115,32 @@
         </div>
         <div id="entries" class="entries"></div>
       </div>
+
+      <div id="linksView" hidden>
+        <div class="content-heading">
+          <div>
+            <p class="eyebrow">Friendly links</p>
+            <h2 id="linksTitle"></h2>
+          </div>
+        </div>
+
+        <form id="linkForm" class="link-form">
+          <label for="linkLabel">Friendly name</label>
+          <input id="linkLabel" maxlength="100" autocomplete="off" placeholder="Example: School website" required>
+          <label for="linkUrl">Web address</label>
+          <input id="linkUrl" type="url" maxlength="2000" autocomplete="url" placeholder="https://example.com/" required>
+          <div class="log-actions">
+            <span id="linkMessage" class="form-message" role="status"></span>
+            <button type="submit">Add link</button>
+          </div>
+        </form>
+
+        <div class="entries-heading">
+          <h3>Links</h3>
+          <span id="linkCount"></span>
+        </div>
+        <div id="linksList" class="links-list"></div>
+      </div>
     </section>
   </main>
 
@@ -125,6 +151,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=1.1.1"></script>
+  <script src="app.js?v=1.2.0"></script>
 </body>
 </html>

@@ -38,6 +38,14 @@ const logEntry = document.getElementById('logEntry');
 const logMessage = document.getElementById('logMessage');
 const entries = document.getElementById('entries');
 const entryCount = document.getElementById('entryCount');
+const linksView = document.getElementById('linksView');
+const linksTitle = document.getElementById('linksTitle');
+const linkForm = document.getElementById('linkForm');
+const linkLabel = document.getElementById('linkLabel');
+const linkUrl = document.getElementById('linkUrl');
+const linkMessage = document.getElementById('linkMessage');
+const linksList = document.getElementById('linksList');
+const linkCount = document.getElementById('linkCount');
 const nodeMenu = document.getElementById('nodeMenu');
 const addChildAction = document.getElementById('addChildAction');
 const editNodeAction = document.getElementById('editNodeAction');
@@ -132,6 +140,7 @@ function appendNode(node) {
   actionsButton.textContent = '⋮';
   actionsButton.setAttribute('aria-label', `Actions for ${node.name}`);
   actionsButton.onclick = event => openNodeMenu(node.id, event.currentTarget);
+  actionsButton.hidden = node.node_type === 'links';
 
   row.append(itemButton, actionsButton);
   tree.append(row);
@@ -155,11 +164,20 @@ function selectNode(id, toggleChildren = false) {
   welcome.hidden = true;
   if (node.node_type === 'log') {
     nodeView.hidden = true;
+    linksView.hidden = true;
     logView.hidden = false;
     logTitle.textContent = node.name;
     loadLogEntries(node.id);
+  } else if (node.node_type === 'links') {
+    nodeView.hidden = true;
+    logView.hidden = true;
+    linksView.hidden = false;
+    const parent = nodes.find(item => item.id === node.parent_id);
+    linksTitle.textContent = parent ? parent.name : 'Links';
+    loadLinks(node.id);
   } else {
     logView.hidden = true;
+    linksView.hidden = true;
     nodeView.hidden = false;
     nodeLevel.textContent = `Level ${node.depth}`;
     nodeTitle.textContent = node.name;
@@ -173,11 +191,20 @@ function showWelcome() {
   selectedNodeId = null;
   nodeView.hidden = true;
   logView.hidden = true;
+  linksView.hidden = true;
   welcome.hidden = false;
   renderTree();
 }
 
 async function loadNodes() {
+  const { error: ensureError } = await db.rpc('mymain_ensure_links');
+  if (ensureError) {
+    setStatus('Database update needed', 'error');
+    emptyTree.hidden = false;
+    emptyTree.textContent = ensureError.message;
+    return;
+  }
+
   const { data, error } = await db
     .from('mymain_nodes')
     .select('id, parent_id, name, node_type, depth, content, created_at, updated_at')
@@ -194,6 +221,64 @@ async function loadNodes() {
   nodes.filter(node => node.depth === 1).forEach(node => expandedNodeIds.add(node.id));
   setStatus('Connected', 'ready');
   renderTree();
+}
+
+async function loadLinks(nodeId) {
+  linksList.innerHTML = '<p class="no-entries">Loading links...</p>';
+  const { data, error } = await db
+    .from('mymain_links')
+    .select('id, label, url, created_at')
+    .eq('node_id', nodeId)
+    .order('created_at', { ascending: true });
+
+  if (selectedNodeId !== nodeId) return;
+  if (error) {
+    linksList.replaceChildren();
+    const message = document.createElement('p');
+    message.className = 'no-entries';
+    message.textContent = error.message;
+    linksList.append(message);
+    return;
+  }
+  renderLinks(data, nodeId);
+}
+
+function renderLinks(items, nodeId) {
+  linksList.replaceChildren();
+  linkCount.textContent = `${items.length} ${items.length === 1 ? 'link' : 'links'}`;
+  if (!items.length) {
+    const message = document.createElement('p');
+    message.className = 'no-entries';
+    message.textContent = 'No links yet. Add the first friendly link above.';
+    linksList.append(message);
+    return;
+  }
+
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'link-item';
+    const anchor = document.createElement('a');
+    anchor.href = item.url;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
+    anchor.textContent = item.label;
+    anchor.title = item.url;
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'delete-link';
+    deleteButton.textContent = 'Delete';
+    deleteButton.setAttribute('aria-label', `Delete ${item.label}`);
+    deleteButton.onclick = () => deleteLink(item, nodeId);
+    row.append(anchor, deleteButton);
+    linksList.append(row);
+  });
+}
+
+async function deleteLink(item, nodeId) {
+  if (!confirm(`Delete the link ${item.label}?`)) return;
+  const { error } = await db.from('mymain_links').delete().eq('id', item.id);
+  if (error) return alert(error.message);
+  await loadLinks(nodeId);
 }
 
 async function loadLogEntries(nodeId) {
@@ -244,15 +329,15 @@ function openNodeMenu(id, anchor) {
   const node = nodes.find(item => item.id === id);
   if (!node) return;
   menuNodeId = id;
-  addChildAction.hidden = node.depth >= 3;
+  addChildAction.hidden = node.depth >= 3 || node.node_type === 'links';
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
   const menuWidth = 180;
-  const menuHeight = node.depth < 3 ? 136 : 96;
+  const menuHeight = !addChildAction.hidden ? 136 : 96;
   nodeMenu.style.left = `${Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8))}px`;
   nodeMenu.style.top = `${Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - menuHeight - 8))}px`;
-  (node.depth < 3 ? addChildAction : editNodeAction).focus();
+  (!addChildAction.hidden ? addChildAction : editNodeAction).focus();
 }
 
 function closeNodeMenu() {
@@ -261,15 +346,16 @@ function closeNodeMenu() {
 }
 
 async function addChild(node) {
-  if (node.depth >= 3) return;
+  if (node.depth >= 3 || node.node_type === 'links') return;
   const value = prompt(`Name the child beneath ${node.name}:`);
   if (value === null) return;
   const name = value.trim();
   if (!name) return alert('Enter a node name.');
 
-  const { error } = await db
-    .from('mymain_nodes')
-    .insert({ name, parent_id: node.id, node_type: 'node', depth: node.depth + 1 });
+  const { error } = await db.rpc('mymain_create_child', {
+    parent_node_id: node.id,
+    child_name: name
+  });
   if (error) return alert(error.message);
 
   expandedNodeIds.add(node.id);
@@ -416,6 +502,36 @@ nodeContentForm.onsubmit = async event => {
   if (error) return setMessage(nodeContentMessage, error.message, 'error');
   node.content = data.content;
   setMessage(nodeContentMessage, 'Saved');
+};
+
+linkForm.onsubmit = async event => {
+  event.preventDefault();
+  const node = nodes.find(item => item.id === selectedNodeId && item.node_type === 'links');
+  if (!node) return;
+
+  let url;
+  try {
+    url = new URL(linkUrl.value.trim());
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+  } catch {
+    return setMessage(linkMessage, 'Enter a complete address beginning with http:// or https://.', 'error');
+  }
+
+  const submitButton = linkForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
+  setMessage(linkMessage, 'Saving...');
+  const { error } = await db.from('mymain_links').insert({
+    node_id: node.id,
+    label: linkLabel.value.trim(),
+    url: url.href
+  });
+  submitButton.disabled = false;
+  if (error) return setMessage(linkMessage, error.message, 'error');
+
+  linkForm.reset();
+  setMessage(linkMessage, 'Saved');
+  await loadLinks(node.id);
+  linkLabel.focus();
 };
 
 logForm.onsubmit = async event => {

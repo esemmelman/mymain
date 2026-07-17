@@ -72,12 +72,13 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .account-row .text-button { flex: 0 0 auto; margin: 0; }
 .icon-button { width: 42px; height: 42px; border: 0; border-radius: 50%; background: var(--accent); color: #fff; font-size: 1.6rem; line-height: 1; }
 
-.quick-form, .log-form, .node-content-form { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
+.quick-form, .log-form, .node-content-form, .link-form { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
 .quick-form { margin-bottom: 18px; }
-.quick-form label, .log-form label, .node-content-form label { display: block; margin-bottom: 8px; font-weight: 750; }
-.form-row input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+.quick-form label, .log-form label, .node-content-form label, .link-form label { display: block; margin-bottom: 8px; font-weight: 750; }
+.form-row input, .link-form input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+.link-form input { height: 42px; margin-bottom: 14px; padding: 0 11px; }
 .form-row input { min-width: 0; height: 42px; padding: 0 11px; }
-.form-row button, .log-form button, .node-content-form button { border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 750; }
+.form-row button, .log-form button, .node-content-form button, .link-form button { border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 750; }
 .form-row button { height: 42px; padding: 0 16px; }
 .text-button { padding: 0; border: 0; background: transparent; color: var(--accent-dark); }
 .quick-form > .text-button { margin-top: 9px; }
@@ -104,9 +105,9 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .welcome { max-width: 650px; margin-top: 12vh; }
 .welcome h2 { margin-bottom: 14px; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1.02; }
 .welcome > p:last-child { color: var(--muted); font-size: 1.08rem; }
-#nodeView, #logView { max-width: 880px; margin: 0 auto; }
+#nodeView, #logView, #linksView { max-width: 880px; margin: 0 auto; }
 .content-heading { margin-bottom: 28px; }
-.log-form, .node-content-form { padding: clamp(18px, 3vw, 28px); }
+.log-form, .node-content-form, .link-form { padding: clamp(18px, 3vw, 28px); }
 textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; line-height: 1.5; }
 .log-actions { margin-top: 13px; }
 .log-actions button { min-height: 44px; padding: 0 20px; }
@@ -120,6 +121,10 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 .entry time { display: block; margin-bottom: 8px; color: var(--accent-dark); font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .entry p { margin-bottom: 0; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .no-entries { padding: 38px 0; color: var(--muted); text-align: center; }
+.links-list { display: grid; }
+.link-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 17px 4px; border-bottom: 1px solid var(--line); }
+.link-item a { min-width: 0; overflow-wrap: anywhere; color: var(--accent-dark); font-weight: 750; }
+.delete-link { padding: 7px 10px; border: 0; border-radius: 7px; background: #f7dddd; color: var(--danger); }
 
 @media (max-width: 720px) {
   html { font-size: 17px; }
