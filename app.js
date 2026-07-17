@@ -218,7 +218,6 @@ async function loadNodes() {
   }
 
   nodes = data;
-  nodes.filter(node => node.depth === 1).forEach(node => expandedNodeIds.add(node.id));
   setStatus('Connected', 'ready');
   renderTree();
 }
