@@ -11,6 +11,10 @@ create table if not exists public.mymain_nodes (
   updated_at timestamptz not null default now()
 );
 
+alter table public.mymain_nodes
+  add column if not exists content text not null default ''
+  check (char_length(content) <= 10000);
+
 create unique index if not exists mymain_one_log_per_root
   on public.mymain_nodes(parent_id)
   where node_type = 'log';

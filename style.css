@@ -72,12 +72,12 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .account-row .text-button { flex: 0 0 auto; margin: 0; }
 .icon-button { width: 42px; height: 42px; border: 0; border-radius: 50%; background: var(--accent); color: #fff; font-size: 1.6rem; line-height: 1; }
 
-.quick-form, .log-form, .info-card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
+.quick-form, .log-form, .node-content-form { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: var(--shadow); }
 .quick-form { margin-bottom: 18px; }
-.quick-form label, .log-form label { display: block; margin-bottom: 8px; font-weight: 750; }
+.quick-form label, .log-form label, .node-content-form label { display: block; margin-bottom: 8px; font-weight: 750; }
 .form-row input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
 .form-row input { min-width: 0; height: 42px; padding: 0 11px; }
-.form-row button, .log-form button { border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 750; }
+.form-row button, .log-form button, .node-content-form button { border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 750; }
 .form-row button { height: 42px; padding: 0 16px; }
 .text-button { padding: 0; border: 0; background: transparent; color: var(--accent-dark); }
 .quick-form > .text-button { margin-top: 9px; }
@@ -106,8 +106,7 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .welcome > p:last-child { color: var(--muted); font-size: 1.08rem; }
 #nodeView, #logView { max-width: 880px; margin: 0 auto; }
 .content-heading { margin-bottom: 28px; }
-.info-card p { color: var(--muted); line-height: 1.6; }
-.log-form { padding: clamp(18px, 3vw, 28px); }
+.log-form, .node-content-form { padding: clamp(18px, 3vw, 28px); }
 textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; line-height: 1.5; }
 .log-actions { margin-top: 13px; }
 .log-actions button { min-height: 44px; padding: 0 20px; }

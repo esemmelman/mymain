@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MyMain</title>
-  <link rel="stylesheet" href="style.css?v=1.0.0">
+  <link rel="stylesheet" href="style.css?v=1.1.0">
 </head>
 <body>
   <header class="app-header">
@@ -14,7 +14,7 @@
     </div>
     <div class="header-meta">
       <span id="connectionStatus" class="status" data-state="loading">Connecting...</span>
-      <span class="version-label">v1.0.0 · Secure three-level tree</span>
+      <span class="version-label">v1.1.0 · Free-form node pages</span>
     </div>
   </header>
 
@@ -78,11 +78,17 @@
             <p id="nodeLevel" class="eyebrow"></p>
             <h2 id="nodeTitle"></h2>
           </div>
-        </div>
-        <div class="info-card">
-          <p id="nodeHint"></p>
           <button id="nodeActionsButton" class="secondary-button" type="button">Node actions</button>
         </div>
+
+        <form id="nodeContentForm" class="node-content-form">
+          <label for="nodeContent">Notes</label>
+          <textarea id="nodeContent" rows="14" maxlength="10000" placeholder="Enter any information, notes, or details for this item..."></textarea>
+          <div class="log-actions">
+            <span id="nodeContentMessage" class="form-message" role="status"></span>
+            <button type="submit">Save notes</button>
+          </div>
+        </form>
       </div>
 
       <div id="logView" hidden>
@@ -119,6 +125,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=1.0.0"></script>
+  <script src="app.js?v=1.1.0"></script>
 </body>
 </html>

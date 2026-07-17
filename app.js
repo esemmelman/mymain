@@ -26,8 +26,10 @@ const welcome = document.getElementById('welcome');
 const nodeView = document.getElementById('nodeView');
 const nodeLevel = document.getElementById('nodeLevel');
 const nodeTitle = document.getElementById('nodeTitle');
-const nodeHint = document.getElementById('nodeHint');
 const nodeActionsButton = document.getElementById('nodeActionsButton');
+const nodeContentForm = document.getElementById('nodeContentForm');
+const nodeContent = document.getElementById('nodeContent');
+const nodeContentMessage = document.getElementById('nodeContentMessage');
 const logView = document.getElementById('logView');
 const logTitle = document.getElementById('logTitle');
 const logActionsButton = document.getElementById('logActionsButton');
@@ -111,14 +113,17 @@ function appendNode(node) {
   chevron.setAttribute('aria-hidden', 'true');
   chevron.textContent = children.length ? '>' : '';
 
-  const icon = document.createElement('span');
-  icon.className = 'node-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = node.node_type === 'log' ? '#' : '•';
-
   const label = document.createElement('span');
   label.textContent = node.name;
-  itemButton.append(chevron, icon, label);
+  itemButton.append(chevron);
+  if (node.node_type !== 'log') {
+    const icon = document.createElement('span');
+    icon.className = 'node-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '•';
+    itemButton.append(icon);
+  }
+  itemButton.append(label);
   itemButton.onclick = () => selectNode(node.id, true);
 
   const actionsButton = document.createElement('button');
@@ -158,9 +163,8 @@ function selectNode(id, toggleChildren = false) {
     nodeView.hidden = false;
     nodeLevel.textContent = `Level ${node.depth}`;
     nodeTitle.textContent = node.name;
-    nodeHint.textContent = node.depth < 3
-      ? 'Use Node actions to add a child, rename this item, or delete it.'
-      : 'Level 3 is the maximum depth. This item can be renamed or deleted, but it cannot have children.';
+    nodeContent.value = node.content ?? '';
+    setMessage(nodeContentMessage, '');
   }
   renderTree();
 }
@@ -176,7 +180,7 @@ function showWelcome() {
 async function loadNodes() {
   const { data, error } = await db
     .from('mymain_nodes')
-    .select('id, parent_id, name, node_type, depth, created_at, updated_at')
+    .select('id, parent_id, name, node_type, depth, content, created_at, updated_at')
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -391,6 +395,27 @@ rootForm.onsubmit = async event => {
   rootForm.reset();
   rootForm.hidden = true;
   await loadNodes();
+};
+
+nodeContentForm.onsubmit = async event => {
+  event.preventDefault();
+  const node = nodes.find(item => item.id === selectedNodeId && item.node_type !== 'log');
+  if (!node) return;
+
+  const submitButton = nodeContentForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
+  setMessage(nodeContentMessage, 'Saving...');
+  const { data, error } = await db
+    .from('mymain_nodes')
+    .update({ content: nodeContent.value })
+    .eq('id', node.id)
+    .select('content')
+    .single();
+  submitButton.disabled = false;
+
+  if (error) return setMessage(nodeContentMessage, error.message, 'error');
+  node.content = data.content;
+  setMessage(nodeContentMessage, 'Saved');
 };
 
 logForm.onsubmit = async event => {
