@@ -226,6 +226,17 @@ set search_path = public
 as $$
 begin
   insert into public.mymain_nodes (user_id, parent_id, name, node_type, depth)
+  select auth.uid(), node.id, 'Log', 'log', node.depth + 1
+  from public.mymain_nodes node
+  where node.user_id = auth.uid()
+    and node.node_type = 'node'
+    and node.depth <= 3
+    and not exists (
+      select 1 from public.mymain_nodes child
+      where child.parent_id = node.id and child.node_type = 'log'
+    );
+
+  insert into public.mymain_nodes (user_id, parent_id, name, node_type, depth)
   select auth.uid(), node.id, 'Links', 'links', node.depth + 1
   from public.mymain_nodes node
   where node.user_id = auth.uid()
