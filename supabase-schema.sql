@@ -85,16 +85,16 @@ begin
   end if;
 
   new.depth := parent_node.depth + 1;
-  if new.node_type = 'log' and new.depth <> 2 then
-    raise exception 'A Log must be a level 2 node';
+  if new.node_type = 'log' and parent_node.node_type <> 'node' then
+    raise exception 'Log nodes must be beneath regular nodes';
   end if;
 
   if new.node_type = 'links' and parent_node.node_type <> 'node' then
     raise exception 'Links nodes must be beneath regular nodes';
   end if;
 
-  if new.depth = 4 and new.node_type <> 'links' then
-    raise exception 'Level 4 is reserved for automatic Links nodes';
+  if new.depth = 4 and new.node_type not in ('log', 'links') then
+    raise exception 'Level 4 is reserved for automatic Log and Links nodes';
   end if;
 
   return new;
@@ -207,6 +207,9 @@ begin
   insert into public.mymain_nodes (name, parent_id, node_type, depth)
   values (trim(child_name), parent_node.id, 'node', parent_node.depth + 1)
   returning * into new_child;
+
+  insert into public.mymain_nodes (name, parent_id, node_type, depth)
+  values ('Log', new_child.id, 'log', new_child.depth + 1);
 
   insert into public.mymain_nodes (name, parent_id, node_type, depth)
   values ('Links', new_child.id, 'links', new_child.depth + 1);
