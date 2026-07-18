@@ -58,6 +58,57 @@ let selectedNodeId = null;
 let menuNodeId = null;
 const expandedNodeIds = new Set();
 
+function getWorkspaceStateKey() {
+  return currentUser ? `mymain-workspace-${currentUser.id}` : null;
+}
+
+function saveWorkspaceState() {
+  const key = getWorkspaceStateKey();
+  if (!key) return;
+
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      selectedNodeId,
+      expandedNodeIds: [...expandedNodeIds]
+    }));
+  } catch {
+    // The app still works when browser storage is unavailable.
+  }
+}
+
+function restoreWorkspaceState() {
+  const key = getWorkspaceStateKey();
+  if (!key) return;
+
+  let state;
+  try {
+    state = JSON.parse(localStorage.getItem(key));
+  } catch {
+    return;
+  }
+
+  if (!state || typeof state !== 'object') return;
+
+  const availableIds = new Set(nodes.map(node => node.id));
+  expandedNodeIds.clear();
+  if (Array.isArray(state.expandedNodeIds)) {
+    state.expandedNodeIds.forEach(id => {
+      if (availableIds.has(id)) expandedNodeIds.add(id);
+    });
+  }
+
+  if (availableIds.has(state.selectedNodeId)) {
+    let ancestor = nodes.find(node => node.id === state.selectedNodeId);
+    while (ancestor?.parent_id) {
+      expandedNodeIds.add(ancestor.parent_id);
+      ancestor = nodes.find(node => node.id === ancestor.parent_id);
+    }
+    selectNode(state.selectedNodeId);
+  } else {
+    showWelcome();
+  }
+}
+
 function setStatus(message, state) {
   connectionStatus.textContent = message;
   connectionStatus.dataset.state = state;
@@ -184,6 +235,7 @@ function selectNode(id, toggleChildren = false) {
     nodeContent.value = node.content ?? '';
     setMessage(nodeContentMessage, '');
   }
+  saveWorkspaceState();
   renderTree();
 }
 
@@ -193,6 +245,7 @@ function showWelcome() {
   logView.hidden = true;
   linksView.hidden = true;
   welcome.hidden = false;
+  saveWorkspaceState();
   renderTree();
 }
 
@@ -360,6 +413,7 @@ async function addChild(node) {
   if (error) return alert(error.message);
 
   expandedNodeIds.add(node.id);
+  saveWorkspaceState();
   await loadNodes();
 }
 
@@ -405,6 +459,7 @@ async function handleSession(session) {
   appShell.hidden = false;
   setStatus('Connecting...', 'loading');
   await loadNodes();
+  restoreWorkspaceState();
 }
 
 function setAuthMode(mode) {
