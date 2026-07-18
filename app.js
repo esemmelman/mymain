@@ -253,7 +253,9 @@ function renderLinks(items, nodeId) {
     return;
   }
 
-  items.forEach(item => {
+  [...items]
+    .sort((first, second) => first.label.localeCompare(second.label, undefined, { sensitivity: 'base' }))
+    .forEach(item => {
     const row = document.createElement('div');
     row.className = 'link-item';
     const anchor = document.createElement('a');
@@ -270,7 +272,7 @@ function renderLinks(items, nodeId) {
     deleteButton.onclick = () => deleteLink(item, nodeId);
     row.append(anchor, deleteButton);
     linksList.append(row);
-  });
+    });
 }
 
 async function deleteLink(item, nodeId) {
