@@ -127,7 +127,7 @@ const editorSelections = new WeakMap();
 function sanitizeRichText(value) {
   const template = document.createElement('template');
   template.innerHTML = String(value || '').replace(RICH_TEXT_PREFIX, '');
-  const allowedTags = new Set(['B', 'STRONG', 'U', 'BR', 'DIV', 'P', 'SPAN', 'INPUT', 'FONT']);
+  const allowedTags = new Set(['B', 'STRONG', 'U', 'BR', 'DIV', 'P', 'SPAN', 'INPUT', 'FONT', 'UL', 'LI']);
   const allowedSizes = new Set(['font-small', 'font-large', 'font-x-large']);
 
   [...template.content.querySelectorAll('*')].forEach(element => {
@@ -152,8 +152,10 @@ function sanitizeRichText(value) {
       return;
     }
     const sizeClass = [...element.classList].find(name => allowedSizes.has(name));
+    const isChecklistItem = element.tagName === 'DIV' && element.classList.contains('checklist-item');
     [...element.attributes].forEach(attribute => element.removeAttribute(attribute.name));
     if (element.tagName === 'SPAN' && sizeClass) element.className = sizeClass;
+    if (isChecklistItem) element.className = 'checklist-item';
   });
   return template.innerHTML;
 }
@@ -193,8 +195,72 @@ function restoreEditorSelection(editor) {
   selection.addRange(range);
 }
 
+function getCurrentBlock(editor) {
+  const selection = window.getSelection();
+  let element = selection.rangeCount ? selection.anchorNode : null;
+  if (element?.nodeType === Node.TEXT_NODE) element = element.parentElement;
+  const block = element?.closest?.('.checklist-item, div, p, li');
+  return block && editor.contains(block) ? block : null;
+}
+
+function setCaret(element, atStart = false) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(atStart);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function toggleCheckbox(editor) {
+  let block = getCurrentBlock(editor);
+  if (block?.classList.contains('checklist-item')) {
+    block.querySelector(':scope > input[type="checkbox"]')?.remove();
+    if (block.firstChild?.nodeType === Node.TEXT_NODE) block.firstChild.textContent = block.firstChild.textContent.replace(/^\u00a0/, '');
+    block.classList.remove('checklist-item');
+    return;
+  }
+  if (!block || block.tagName === 'LI') {
+    document.execCommand('formatBlock', false, 'div');
+    block = getCurrentBlock(editor);
+  }
+  if (!block) return;
+  block.classList.add('checklist-item');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  block.prepend(checkbox, document.createTextNode('\u00a0'));
+  setCaret(block);
+}
+
+function updateToolbarState(editor) {
+  const toolbar = document.querySelector(`.edit-toolbar[data-editor="${editor.id}"]`);
+  if (!toolbar) return;
+  toolbar.querySelector('[data-command="bold"]')?.setAttribute('aria-pressed', String(document.queryCommandState('bold')));
+  toolbar.querySelector('[data-command="underline"]')?.setAttribute('aria-pressed', String(document.queryCommandState('underline')));
+  toolbar.querySelector('[data-command="insertUnorderedList"]')?.setAttribute('aria-pressed', String(document.queryCommandState('insertUnorderedList')));
+  toolbar.querySelector('[data-command="checkbox"]')?.setAttribute('aria-pressed', String(Boolean(getCurrentBlock(editor)?.classList.contains('checklist-item'))));
+}
+
 document.querySelectorAll('.rich-editor').forEach(editor => {
-  ['keyup', 'mouseup', 'input'].forEach(type => editor.addEventListener(type, () => rememberEditorSelection(editor)));
+  ['keyup', 'mouseup', 'input'].forEach(type => editor.addEventListener(type, () => {
+    rememberEditorSelection(editor);
+    updateToolbarState(editor);
+  }));
+  editor.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return;
+    const block = getCurrentBlock(editor);
+    if (!block?.classList.contains('checklist-item')) return;
+    event.preventDefault();
+    const nextItem = document.createElement('div');
+    nextItem.className = 'checklist-item';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    nextItem.append(checkbox, document.createTextNode('\u00a0'), document.createElement('br'));
+    block.after(nextItem);
+    setCaret(nextItem);
+    rememberEditorSelection(editor);
+    updateToolbarState(editor);
+  });
 });
 
 document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
@@ -204,11 +270,12 @@ document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
     button.onclick = () => {
       restoreEditorSelection(editor);
       if (button.dataset.command === 'checkbox') {
-        document.execCommand('insertHTML', false, '<input type="checkbox">&nbsp;');
+        toggleCheckbox(editor);
       } else {
         document.execCommand(button.dataset.command, false);
       }
       rememberEditorSelection(editor);
+      updateToolbarState(editor);
     };
   });
   const sizeSelect = toolbar.querySelector('select[data-command="fontSize"]');
