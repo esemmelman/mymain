@@ -188,12 +188,27 @@ function rememberEditorSelection(editor) {
 }
 
 function restoreEditorSelection(editor) {
-  editor.focus();
+  const scrollPosition = { x: window.scrollX, y: window.scrollY };
+  try {
+    editor.focus({ preventScroll: true });
+  } catch {
+    editor.focus();
+  }
+  window.scrollTo(scrollPosition.x, scrollPosition.y);
   const range = editorSelections.get(editor);
   if (!range || !editor.contains(range.commonAncestorContainer)) return;
   const selection = window.getSelection();
   selection.removeAllRanges();
   selection.addRange(range);
+}
+
+function restorePageScroll(position) {
+  if (!position) return;
+  window.scrollTo(position.x, position.y);
+  requestAnimationFrame(() => {
+    window.scrollTo(position.x, position.y);
+    requestAnimationFrame(() => window.scrollTo(position.x, position.y));
+  });
 }
 
 function getCurrentBlock(editor) {
@@ -297,6 +312,10 @@ document.querySelectorAll('.rich-editor').forEach(editor => {
 
 document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
   const editor = document.getElementById(toolbar.dataset.editor);
+  let toolbarScrollPosition;
+  toolbar.addEventListener('pointerdown', () => {
+    toolbarScrollPosition = { x: window.scrollX, y: window.scrollY };
+  });
   toolbar.querySelectorAll('button').forEach(button => {
     button.addEventListener('mousedown', event => event.preventDefault());
     button.onclick = () => {
@@ -310,6 +329,7 @@ document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
       }
       rememberEditorSelection(editor);
       updateToolbarState(editor);
+      restorePageScroll(toolbarScrollPosition);
     };
   });
   const sizeSelect = toolbar.querySelector('select[data-command="fontSize"]');
@@ -319,6 +339,7 @@ document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
     document.execCommand('fontSize', false, size);
     rememberEditorSelection(editor);
     sizeSelect.value = 'normal';
+    restorePageScroll(toolbarScrollPosition);
   };
 });
 
