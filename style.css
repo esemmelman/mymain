@@ -30,6 +30,7 @@ button, input, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: wait; opacity: .65; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(23, 107, 91, .25); outline-offset: 2px; }
+select:focus-visible, [contenteditable="true"]:focus-visible { outline: 3px solid rgba(23, 107, 91, .25); outline-offset: 2px; }
 
 h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.65rem, 3vw, 2.35rem); }
@@ -109,6 +110,20 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .content-heading { margin-bottom: 28px; }
 .log-form, .node-content-form, .link-form { padding: clamp(18px, 3vw, 28px); }
 textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; line-height: 1.5; }
+.editor-shell { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.edit-toolbar { display: flex; align-items: center; gap: 5px; padding: 7px; border-bottom: 1px solid var(--line); background: #f7f5ef; }
+.node-content-form .edit-toolbar button, .log-form .edit-toolbar button { width: 34px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+.node-content-form .edit-toolbar button:hover, .log-form .edit-toolbar button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.font-size-control { display: flex !important; align-items: center; gap: 6px; margin: 0 0 0 auto !important; color: var(--muted); font-size: .78rem; }
+.font-size-control select { height: 32px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+.rich-editor { min-height: 120px; padding: 13px; overflow-wrap: anywhere; line-height: 1.5; }
+.rich-editor-notes { min-height: 330px; }
+.rich-editor:empty::before { color: #777; content: attr(data-placeholder); pointer-events: none; }
+.rich-editor input[type="checkbox"], .entry-rich-text input[type="checkbox"] { width: 1em; height: 1em; margin: 0 .45em 0 .1em; accent-color: var(--accent); vertical-align: middle; }
+.entry-rich-text { margin-bottom: 0; line-height: 1.65; overflow-wrap: anywhere; }
+.font-small { font-size: .8em; }
+.font-large { font-size: 1.25em; }
+.font-x-large { font-size: 1.55em; }
 .log-actions { margin-top: 13px; }
 .log-actions button { min-height: 44px; padding: 0 20px; }
 .form-message { min-height: 1.25em; color: var(--muted); font-size: .88rem; }

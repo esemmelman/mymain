@@ -29,12 +29,14 @@ const nodeTitle = document.getElementById('nodeTitle');
 const nodeActionsButton = document.getElementById('nodeActionsButton');
 const nodeContentForm = document.getElementById('nodeContentForm');
 const nodeContent = document.getElementById('nodeContent');
+const nodeContentEditor = document.getElementById('nodeContentEditor');
 const nodeContentMessage = document.getElementById('nodeContentMessage');
 const logView = document.getElementById('logView');
 const logTitle = document.getElementById('logTitle');
 const logActionsButton = document.getElementById('logActionsButton');
 const logForm = document.getElementById('logForm');
 const logEntry = document.getElementById('logEntry');
+const logEntryEditor = document.getElementById('logEntryEditor');
 const logMessage = document.getElementById('logMessage');
 const entries = document.getElementById('entries');
 const entryCount = document.getElementById('entryCount');
@@ -118,6 +120,106 @@ function setMessage(element, message, state = '') {
   element.textContent = message;
   element.dataset.state = state;
 }
+
+const RICH_TEXT_PREFIX = '<!--mymain-rich-->';
+const editorSelections = new WeakMap();
+
+function sanitizeRichText(value) {
+  const template = document.createElement('template');
+  template.innerHTML = String(value || '').replace(RICH_TEXT_PREFIX, '');
+  const allowedTags = new Set(['B', 'STRONG', 'U', 'BR', 'DIV', 'P', 'SPAN', 'INPUT', 'FONT']);
+  const allowedSizes = new Set(['font-small', 'font-large', 'font-x-large']);
+
+  [...template.content.querySelectorAll('*')].forEach(element => {
+    if (!allowedTags.has(element.tagName)) {
+      element.replaceWith(...element.childNodes);
+      return;
+    }
+    if (element.tagName === 'INPUT') {
+      if (element.type !== 'checkbox') return element.remove();
+      const checked = element.checked || element.hasAttribute('checked');
+      [...element.attributes].forEach(attribute => element.removeAttribute(attribute.name));
+      element.type = 'checkbox';
+      if (checked) element.setAttribute('checked', '');
+      return;
+    }
+    if (element.tagName === 'FONT') {
+      const sizeClass = { '1': 'font-small', '2': 'font-small', '5': 'font-large', '6': 'font-x-large', '7': 'font-x-large' }[element.getAttribute('size')];
+      const span = document.createElement('span');
+      if (sizeClass) span.className = sizeClass;
+      span.append(...element.childNodes);
+      element.replaceWith(span);
+      return;
+    }
+    const sizeClass = [...element.classList].find(name => allowedSizes.has(name));
+    [...element.attributes].forEach(attribute => element.removeAttribute(attribute.name));
+    if (element.tagName === 'SPAN' && sizeClass) element.className = sizeClass;
+  });
+  return template.innerHTML;
+}
+
+function setEditorContent(editor, value) {
+  if (String(value || '').startsWith(RICH_TEXT_PREFIX)) editor.innerHTML = sanitizeRichText(value);
+  else editor.textContent = value || '';
+}
+
+function serializeEditor(editor) {
+  editor.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.toggleAttribute('checked', checkbox.checked);
+  });
+  return `${RICH_TEXT_PREFIX}${sanitizeRichText(editor.innerHTML)}`;
+}
+
+function renderRichText(element, value) {
+  element.className = 'entry-rich-text';
+  if (String(value || '').startsWith(RICH_TEXT_PREFIX)) element.innerHTML = sanitizeRichText(value);
+  else element.textContent = value || '';
+  element.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.disabled = true);
+}
+
+function rememberEditorSelection(editor) {
+  const selection = window.getSelection();
+  if (selection.rangeCount && editor.contains(selection.anchorNode)) {
+    editorSelections.set(editor, selection.getRangeAt(0).cloneRange());
+  }
+}
+
+function restoreEditorSelection(editor) {
+  editor.focus();
+  const range = editorSelections.get(editor);
+  if (!range || !editor.contains(range.commonAncestorContainer)) return;
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+document.querySelectorAll('.rich-editor').forEach(editor => {
+  ['keyup', 'mouseup', 'input'].forEach(type => editor.addEventListener(type, () => rememberEditorSelection(editor)));
+});
+
+document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
+  const editor = document.getElementById(toolbar.dataset.editor);
+  toolbar.querySelectorAll('button').forEach(button => {
+    button.addEventListener('mousedown', event => event.preventDefault());
+    button.onclick = () => {
+      restoreEditorSelection(editor);
+      if (button.dataset.command === 'checkbox') {
+        document.execCommand('insertHTML', false, '<input type="checkbox">&nbsp;');
+      } else {
+        document.execCommand(button.dataset.command, false);
+      }
+      rememberEditorSelection(editor);
+    };
+  });
+  const sizeSelect = toolbar.querySelector('select[data-command="fontSize"]');
+  sizeSelect.onchange = () => {
+    restoreEditorSelection(editor);
+    const size = { small: '2', normal: '3', large: '5', 'x-large': '7' }[sizeSelect.value];
+    document.execCommand('fontSize', false, size);
+    rememberEditorSelection(editor);
+    sizeSelect.value = 'normal';
+  };
+});
 
 function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, {
@@ -232,7 +334,7 @@ function selectNode(id, toggleChildren = false) {
     nodeView.hidden = false;
     nodeLevel.textContent = `Level ${node.depth}`;
     nodeTitle.textContent = node.name;
-    nodeContent.value = node.content ?? '';
+    setEditorContent(nodeContentEditor, node.content);
     setMessage(nodeContentMessage, '');
   }
   saveWorkspaceState();
@@ -372,8 +474,8 @@ function renderEntries(items) {
     const time = document.createElement('time');
     time.dateTime = item.created_at;
     time.textContent = formatDate(item.created_at);
-    const body = document.createElement('p');
-    body.textContent = item.body;
+    const body = document.createElement('div');
+    renderRichText(body, item.body);
     article.append(time, body);
     entries.append(article);
   });
@@ -544,7 +646,9 @@ nodeContentForm.onsubmit = async event => {
   const node = nodes.find(item => item.id === selectedNodeId && item.node_type !== 'log');
   if (!node) return;
 
-  const submitButton = nodeContentForm.querySelector('[type="submit"]');
+  if (nodeContentEditor.textContent.length > 10000) return setMessage(nodeContentMessage, 'Notes must be 10,000 characters or fewer.', 'error');
+  nodeContent.value = serializeEditor(nodeContentEditor);
+  const submitButton = nodeContentForm.querySelector('.log-actions [type="submit"]');
   submitButton.disabled = true;
   setMessage(nodeContentMessage, 'Saving...');
   const { data, error } = await db
@@ -593,8 +697,11 @@ linkForm.onsubmit = async event => {
 logForm.onsubmit = async event => {
   event.preventDefault();
   const node = nodes.find(item => item.id === selectedNodeId && item.node_type === 'log');
-  const body = logEntry.value.trim();
-  if (!node || !body) return;
+  const plainBody = logEntryEditor.textContent.trim();
+  const hasCheckbox = Boolean(logEntryEditor.querySelector('input[type="checkbox"]'));
+  if (plainBody.length > 5000) return setMessage(logMessage, 'Log entries must be 5,000 characters or fewer.', 'error');
+  const body = serializeEditor(logEntryEditor);
+  if (!node || (!plainBody && !hasCheckbox)) return;
 
   const submitButton = logForm.querySelector('[type="submit"]');
   submitButton.disabled = true;
@@ -604,9 +711,10 @@ logForm.onsubmit = async event => {
   if (error) return setMessage(logMessage, error.message, 'error');
 
   logForm.reset();
+  logEntryEditor.replaceChildren();
   setMessage(logMessage, 'Saved');
   await loadLogEntries(node.id);
-  logEntry.focus();
+  logEntryEditor.focus();
 };
 
 nodeActionsButton.onclick = event => {

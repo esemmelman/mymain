@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MyMain</title>
-  <link rel="stylesheet" href="style.css?v=1.2.4">
+  <link rel="stylesheet" href="style.css?v=1.3.0">
 </head>
 <body>
   <header class="app-header">
@@ -14,7 +14,7 @@
     </div>
     <div class="header-meta">
       <span id="connectionStatus" class="status" data-state="loading">Connecting...</span>
-      <span class="version-label">v1.2.4 · Missing Log repair</span>
+      <span class="version-label">v1.3.0 · Editing toolbar</span>
     </div>
   </header>
 
@@ -82,8 +82,19 @@
         </div>
 
         <form id="nodeContentForm" class="node-content-form">
-          <label for="nodeContent">Notes</label>
-          <textarea id="nodeContent" rows="14" maxlength="10000" placeholder="Enter any information, notes, or details for this item..."></textarea>
+          <label for="nodeContentEditor">Notes</label>
+          <div class="editor-shell">
+            <div class="edit-toolbar" role="toolbar" aria-label="Notes formatting" data-editor="nodeContentEditor">
+              <button type="button" data-command="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
+              <button type="button" data-command="underline" aria-label="Underline" title="Underline"><u>U</u></button>
+              <button type="button" data-command="checkbox" aria-label="Insert checkbox" title="Insert checkbox">☐</button>
+              <label class="font-size-control">Size
+                <select data-command="fontSize" aria-label="Font size"><option value="small">Small</option><option value="normal" selected>Normal</option><option value="large">Large</option><option value="x-large">Extra large</option></select>
+              </label>
+            </div>
+            <div id="nodeContentEditor" class="rich-editor rich-editor-notes" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Notes" data-placeholder="Enter any information, notes, or details for this item..."></div>
+            <textarea id="nodeContent" hidden></textarea>
+          </div>
           <div class="log-actions">
             <span id="nodeContentMessage" class="form-message" role="status"></span>
             <button type="submit">Save notes</button>
@@ -101,8 +112,19 @@
         </div>
 
         <form id="logForm" class="log-form">
-          <label for="logEntry">Add a log entry</label>
-          <textarea id="logEntry" rows="4" maxlength="5000" placeholder="Write a note, update, or next step..." required></textarea>
+          <label for="logEntryEditor">Add a log entry</label>
+          <div class="editor-shell">
+            <div class="edit-toolbar" role="toolbar" aria-label="Log entry formatting" data-editor="logEntryEditor">
+              <button type="button" data-command="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
+              <button type="button" data-command="underline" aria-label="Underline" title="Underline"><u>U</u></button>
+              <button type="button" data-command="checkbox" aria-label="Insert checkbox" title="Insert checkbox">☐</button>
+              <label class="font-size-control">Size
+                <select data-command="fontSize" aria-label="Font size"><option value="small">Small</option><option value="normal" selected>Normal</option><option value="large">Large</option><option value="x-large">Extra large</option></select>
+              </label>
+            </div>
+            <div id="logEntryEditor" class="rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Add a log entry" data-placeholder="Write a note, update, or next step..."></div>
+            <textarea id="logEntry" hidden></textarea>
+          </div>
           <div class="log-actions">
             <span id="logMessage" class="form-message" role="status"></span>
             <button type="submit">Save entry</button>
@@ -151,6 +173,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=1.2.4"></script>
+  <script src="app.js?v=1.3.0"></script>
 </body>
 </html>
