@@ -161,6 +161,7 @@ function sanitizeRichText(value) {
 }
 
 function setEditorContent(editor, value) {
+  editor.classList.remove('checklist-item');
   if (String(value || '').startsWith(RICH_TEXT_PREFIX)) editor.innerHTML = sanitizeRichText(value);
   else editor.textContent = value || '';
 }
@@ -200,19 +201,25 @@ function getCurrentBlock(editor) {
   let element = selection.rangeCount ? selection.anchorNode : null;
   if (element?.nodeType === Node.TEXT_NODE) element = element.parentElement;
   const block = element?.closest?.('.checklist-item, div, p, li');
-  return block && editor.contains(block) ? block : null;
+  return block && block !== editor && editor.contains(block) ? block : null;
 }
 
 function setCaret(element, atStart = false) {
   const range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(atStart);
+  if (!atStart && element.lastChild?.nodeName === 'BR') {
+    range.setStartBefore(element.lastChild);
+    range.collapse(true);
+  } else {
+    range.selectNodeContents(element);
+    range.collapse(atStart);
+  }
   const selection = window.getSelection();
   selection.removeAllRanges();
   selection.addRange(range);
 }
 
 function toggleCheckbox(editor) {
+  editor.classList.remove('checklist-item');
   let block = getCurrentBlock(editor);
   if (block?.classList.contains('checklist-item')) {
     block.querySelector(':scope > input[type="checkbox"]')?.remove();
@@ -224,7 +231,11 @@ function toggleCheckbox(editor) {
     document.execCommand('formatBlock', false, 'div');
     block = getCurrentBlock(editor);
   }
-  if (!block) return;
+  if (!block) {
+    block = document.createElement('div');
+    block.append(document.createElement('br'));
+    editor.append(block);
+  }
   block.classList.add('checklist-item');
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
