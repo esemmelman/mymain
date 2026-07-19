@@ -252,12 +252,33 @@ function updateToolbarState(editor) {
   toolbar.querySelector('[data-command="checkbox"]')?.setAttribute('aria-pressed', String(Boolean(getCurrentBlock(editor)?.classList.contains('checklist-item'))));
 }
 
+function applyInlineCommand(editor, command) {
+  const selection = window.getSelection();
+  const formattedSelection = selection.rangeCount && !selection.getRangeAt(0).collapsed;
+  document.execCommand(command, false);
+
+  // Mobile browsers often leave the typing state inside the formatted element.
+  // After formatting selected text, move beyond it and return future typing to plain text.
+  if (formattedSelection) {
+    selection.collapseToEnd();
+    if (document.queryCommandState(command)) document.execCommand(command, false);
+  }
+  rememberEditorSelection(editor);
+}
+
 document.querySelectorAll('.rich-editor').forEach(editor => {
   ['keyup', 'mouseup', 'input'].forEach(type => editor.addEventListener(type, () => {
     rememberEditorSelection(editor);
     updateToolbarState(editor);
   }));
   editor.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && document.queryCommandState('underline')) {
+      setTimeout(() => {
+        if (document.queryCommandState('underline')) document.execCommand('underline', false);
+        rememberEditorSelection(editor);
+        updateToolbarState(editor);
+      }, 0);
+    }
     if (event.key !== 'Enter') return;
     const block = getCurrentBlock(editor);
     if (!block?.classList.contains('checklist-item')) return;
@@ -282,6 +303,8 @@ document.querySelectorAll('.edit-toolbar').forEach(toolbar => {
       restoreEditorSelection(editor);
       if (button.dataset.command === 'checkbox') {
         toggleCheckbox(editor);
+      } else if (button.dataset.command === 'bold' || button.dataset.command === 'underline') {
+        applyInlineCommand(editor, button.dataset.command);
       } else {
         document.execCommand(button.dataset.command, false);
       }
