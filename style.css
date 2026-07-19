@@ -120,6 +120,7 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 .rich-editor { min-height: 120px; padding: 13px; overflow-wrap: anywhere; line-height: 1.5; }
 .rich-editor-notes { min-height: 330px; }
 .rich-editor:empty::before { color: #777; content: attr(data-placeholder); pointer-events: none; }
+.rich-editor::spelling-error, .rich-editor::grammar-error { text-decoration: none; }
 .rich-editor input[type="checkbox"], .entry-rich-text input[type="checkbox"] { width: 1em; height: 1em; margin: 0 .45em 0 .1em; accent-color: var(--accent); vertical-align: middle; }
 .rich-editor ul, .entry-rich-text ul { margin: .25em 0; padding-left: 1.5em; }
 .checklist-item { min-height: 1.5em; }
