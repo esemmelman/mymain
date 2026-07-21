@@ -66,10 +66,10 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .app-shell { width: min(1440px, 100%); min-height: calc(100vh - 92px); margin: 0 auto; display: grid; grid-template-columns: minmax(280px, 350px) minmax(0, 1fr); }
 .tree-panel {
   padding: 28px 20px;
-  border-right: 1px solid #c8d8d1;
+  border-right: 1px solid #d1c2ad;
   background:
-    radial-gradient(circle at 8% 4%, rgba(255, 255, 255, .9) 0, rgba(255, 255, 255, 0) 32%),
-    linear-gradient(165deg, #e4f0eb 0%, #d9e8e1 48%, #eee8da 100%);
+    radial-gradient(circle at 8% 4%, rgba(255, 255, 255, .82) 0, rgba(255, 255, 255, 0) 32%),
+    linear-gradient(165deg, #eee4d4 0%, #e4d6c2 50%, #d9c7ae 100%);
 }
 .content-panel { min-width: 0; padding: clamp(28px, 5vw, 68px); background: var(--paper); }
 .panel-heading, .content-heading, .entries-heading, .form-row, .log-actions, .account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
