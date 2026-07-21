@@ -6,7 +6,7 @@ create table if not exists public.mymain_nodes (
   parent_id uuid references public.mymain_nodes(id) on delete cascade,
   name text not null check (char_length(trim(name)) between 1 and 100),
   node_type text not null default 'node' check (node_type in ('node', 'log', 'links')),
-  depth smallint not null check (depth between 1 and 4),
+  depth smallint not null check (depth between 1 and 5),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -20,7 +20,7 @@ alter table public.mymain_nodes
   add constraint mymain_nodes_node_type_check check (node_type in ('node', 'log', 'links'));
 alter table public.mymain_nodes drop constraint if exists mymain_nodes_depth_check;
 alter table public.mymain_nodes
-  add constraint mymain_nodes_depth_check check (depth between 1 and 4);
+  add constraint mymain_nodes_depth_check check (depth between 1 and 5);
 
 create unique index if not exists mymain_one_log_per_root
   on public.mymain_nodes(parent_id)
@@ -80,8 +80,8 @@ begin
     raise exception 'Invalid parent node';
   end if;
 
-  if parent_node.depth >= 4 or parent_node.node_type = 'links' then
-    raise exception 'Nodes cannot be nested beyond level 4';
+  if parent_node.depth >= 5 or parent_node.node_type = 'links' then
+    raise exception 'Nodes cannot be nested beyond level 5';
   end if;
 
   new.depth := parent_node.depth + 1;
@@ -93,8 +93,8 @@ begin
     raise exception 'Links nodes must be beneath regular nodes';
   end if;
 
-  if new.depth = 4 and new.node_type not in ('log', 'links') then
-    raise exception 'Level 4 is reserved for automatic Log and Links nodes';
+  if new.depth = 5 and new.node_type not in ('log', 'links') then
+    raise exception 'Level 5 is reserved for automatic Log and Links nodes';
   end if;
 
   return new;
@@ -200,7 +200,7 @@ begin
   from public.mymain_nodes
   where id = parent_node_id and user_id = auth.uid();
 
-  if not found or parent_node.depth >= 3 or parent_node.node_type = 'links' then
+  if not found or parent_node.depth >= 4 or parent_node.node_type = 'links' then
     raise exception 'This node cannot have a user-created child';
   end if;
 
@@ -230,7 +230,7 @@ begin
   from public.mymain_nodes node
   where node.user_id = auth.uid()
     and node.node_type = 'node'
-    and node.depth <= 3
+    and node.depth <= 4
     and not exists (
       select 1 from public.mymain_nodes child
       where child.parent_id = node.id and child.node_type = 'log'
@@ -241,7 +241,7 @@ begin
   from public.mymain_nodes node
   where node.user_id = auth.uid()
     and node.node_type = 'node'
-    and node.depth <= 3
+    and node.depth <= 4
     and not exists (
       select 1 from public.mymain_nodes child
       where child.parent_id = node.id and child.node_type = 'links'

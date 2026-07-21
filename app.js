@@ -607,7 +607,7 @@ function openNodeMenu(id, anchor) {
   const node = nodes.find(item => item.id === id);
   if (!node) return;
   menuNodeId = id;
-  addChildAction.hidden = node.depth >= 3 || node.node_type === 'links';
+  addChildAction.hidden = node.depth >= 4 || node.node_type === 'links';
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
@@ -624,7 +624,7 @@ function closeNodeMenu() {
 }
 
 async function addChild(node) {
-  if (node.depth >= 3 || node.node_type === 'links') return;
+  if (node.depth >= 4 || node.node_type === 'links') return;
   const value = prompt(`Name the child beneath ${node.name}:`);
   if (value === null) return;
   const name = value.trim();

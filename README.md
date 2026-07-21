@@ -1,6 +1,6 @@
 # MyMain
 
-A secure three-level tree workspace with automatic Logs, dated log entries, and email/password authentication.
+A secure four-level tree workspace with automatic Logs, dated log entries, and email/password authentication.
 
 ## Setup
 
