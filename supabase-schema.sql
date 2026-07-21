@@ -47,6 +47,31 @@ create table if not exists public.mymain_links (
   created_at timestamptz not null default now()
 );
 
+-- One-time cleanup for automatic Log and Links nodes that were never used.
+create table if not exists public.mymain_migrations (
+  id text primary key,
+  ran_at timestamptz not null default now()
+);
+
+revoke all on table public.mymain_migrations from public, anon, authenticated;
+
+with migration as (
+  insert into public.mymain_migrations (id)
+  values ('2026-07-21-remove-empty-automatic-nodes')
+  on conflict (id) do nothing
+  returning id
+)
+delete from public.mymain_nodes node
+using migration
+where
+  (node.node_type = 'log' and not exists (
+    select 1 from public.mymain_log_entries entry where entry.node_id = node.id
+  ))
+  or
+  (node.node_type = 'links' and not exists (
+    select 1 from public.mymain_links link where link.node_id = node.id
+  ));
+
 create or replace function public.mymain_validate_node()
 returns trigger
 language plpgsql
@@ -94,7 +119,7 @@ begin
   end if;
 
   if new.depth = 5 and new.node_type not in ('log', 'links') then
-    raise exception 'Level 5 is reserved for automatic Log and Links nodes';
+    raise exception 'Level 5 is reserved for Log and Links nodes';
   end if;
 
   return new;
@@ -176,12 +201,6 @@ begin
   values (trim(root_name), null, 'node', 1)
   returning * into new_root;
 
-  insert into public.mymain_nodes (name, parent_id, node_type, depth)
-  values ('Log', new_root.id, 'log', 2);
-
-  insert into public.mymain_nodes (name, parent_id, node_type, depth)
-  values ('Links', new_root.id, 'links', 2);
-
   return new_root;
 end;
 $$;
@@ -208,44 +227,44 @@ begin
   values (trim(child_name), parent_node.id, 'node', parent_node.depth + 1)
   returning * into new_child;
 
-  insert into public.mymain_nodes (name, parent_id, node_type, depth)
-  values ('Log', new_child.id, 'log', new_child.depth + 1);
-
-  insert into public.mymain_nodes (name, parent_id, node_type, depth)
-  values ('Links', new_child.id, 'links', new_child.depth + 1);
-
   return new_child;
 end;
 $$;
 
-create or replace function public.mymain_ensure_links()
-returns void
+drop function if exists public.mymain_ensure_links();
+
+create or replace function public.mymain_create_special_node(parent_node_id uuid, special_node_type text)
+returns public.mymain_nodes
 language plpgsql
 security invoker
 set search_path = public
 as $$
+declare
+  parent_node public.mymain_nodes;
+  new_special_node public.mymain_nodes;
 begin
-  insert into public.mymain_nodes (user_id, parent_id, name, node_type, depth)
-  select auth.uid(), node.id, 'Log', 'log', node.depth + 1
-  from public.mymain_nodes node
-  where node.user_id = auth.uid()
-    and node.node_type = 'node'
-    and node.depth <= 4
-    and not exists (
-      select 1 from public.mymain_nodes child
-      where child.parent_id = node.id and child.node_type = 'log'
-    );
+  if special_node_type not in ('log', 'links') then
+    raise exception 'Invalid special node type';
+  end if;
 
-  insert into public.mymain_nodes (user_id, parent_id, name, node_type, depth)
-  select auth.uid(), node.id, 'Links', 'links', node.depth + 1
-  from public.mymain_nodes node
-  where node.user_id = auth.uid()
-    and node.node_type = 'node'
-    and node.depth <= 4
-    and not exists (
-      select 1 from public.mymain_nodes child
-      where child.parent_id = node.id and child.node_type = 'links'
-    );
+  select * into parent_node
+  from public.mymain_nodes
+  where id = parent_node_id and user_id = auth.uid();
+
+  if not found or parent_node.node_type <> 'node' or parent_node.depth >= 5 then
+    raise exception 'This node cannot have a Log or Links node';
+  end if;
+
+  insert into public.mymain_nodes (name, parent_id, node_type, depth)
+  values (
+    case when special_node_type = 'log' then 'Log' else 'Links' end,
+    parent_node.id,
+    special_node_type,
+    parent_node.depth + 1
+  )
+  returning * into new_special_node;
+
+  return new_special_node;
 end;
 $$;
 
@@ -319,5 +338,5 @@ revoke execute on function public.mymain_create_root(text) from public, anon;
 grant execute on function public.mymain_create_root(text) to authenticated;
 revoke execute on function public.mymain_create_child(uuid, text) from public, anon;
 grant execute on function public.mymain_create_child(uuid, text) to authenticated;
-revoke execute on function public.mymain_ensure_links() from public, anon;
-grant execute on function public.mymain_ensure_links() to authenticated;
+revoke execute on function public.mymain_create_special_node(uuid, text) from public, anon;
+grant execute on function public.mymain_create_special_node(uuid, text) to authenticated;

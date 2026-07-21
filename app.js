@@ -50,6 +50,8 @@ const linksList = document.getElementById('linksList');
 const linkCount = document.getElementById('linkCount');
 const nodeMenu = document.getElementById('nodeMenu');
 const addChildAction = document.getElementById('addChildAction');
+const addLogAction = document.getElementById('addLogAction');
+const addLinksAction = document.getElementById('addLinksAction');
 const editNodeAction = document.getElementById('editNodeAction');
 const deleteNodeAction = document.getElementById('deleteNodeAction');
 
@@ -408,6 +410,10 @@ function appendNode(node) {
   }
   itemButton.append(label);
   itemButton.onclick = () => selectNode(node.id, true);
+  itemButton.oncontextmenu = event => {
+    event.preventDefault();
+    openNodeMenu(node.id, event.currentTarget);
+  };
 
   const actionsButton = document.createElement('button');
   actionsButton.type = 'button';
@@ -415,7 +421,6 @@ function appendNode(node) {
   actionsButton.textContent = '⋮';
   actionsButton.setAttribute('aria-label', `Actions for ${node.name}`);
   actionsButton.onclick = event => openNodeMenu(node.id, event.currentTarget);
-  actionsButton.hidden = node.node_type === 'links';
 
   row.append(itemButton, actionsButton);
   tree.append(row);
@@ -474,14 +479,6 @@ function showWelcome() {
 }
 
 async function loadNodes() {
-  const { error: ensureError } = await db.rpc('mymain_ensure_links');
-  if (ensureError) {
-    setStatus('Database update needed', 'error');
-    emptyTree.hidden = false;
-    emptyTree.textContent = ensureError.message;
-    return;
-  }
-
   const { data, error } = await db
     .from('mymain_nodes')
     .select('id, parent_id, name, node_type, depth, content, created_at, updated_at')
@@ -607,15 +604,20 @@ function openNodeMenu(id, anchor) {
   const node = nodes.find(item => item.id === id);
   if (!node) return;
   menuNodeId = id;
-  addChildAction.hidden = node.depth >= 4 || node.node_type === 'links';
+  const isRegularNode = node.node_type === 'node';
+  const children = getChildren(node.id);
+  addChildAction.hidden = !isRegularNode || node.depth >= 4;
+  addLogAction.hidden = !isRegularNode || children.some(child => child.node_type === 'log');
+  addLinksAction.hidden = !isRegularNode || children.some(child => child.node_type === 'links');
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
   const menuWidth = 180;
-  const menuHeight = !addChildAction.hidden ? 136 : 96;
+  const visibleActions = [...nodeMenu.querySelectorAll('button')].filter(button => !button.hidden);
+  const menuHeight = visibleActions.length * 40 + 12;
   nodeMenu.style.left = `${Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8))}px`;
   nodeMenu.style.top = `${Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - menuHeight - 8))}px`;
-  (!addChildAction.hidden ? addChildAction : editNodeAction).focus();
+  visibleActions[0]?.focus();
 }
 
 function closeNodeMenu() {
@@ -624,7 +626,7 @@ function closeNodeMenu() {
 }
 
 async function addChild(node) {
-  if (node.depth >= 4 || node.node_type === 'links') return;
+  if (node.depth >= 4 || node.node_type !== 'node') return;
   const value = prompt(`Name the child beneath ${node.name}:`);
   if (value === null) return;
   const name = value.trim();
@@ -633,6 +635,19 @@ async function addChild(node) {
   const { error } = await db.rpc('mymain_create_child', {
     parent_node_id: node.id,
     child_name: name
+  });
+  if (error) return alert(error.message);
+
+  expandedNodeIds.add(node.id);
+  saveWorkspaceState();
+  await loadNodes();
+}
+
+async function addSpecialNode(node, nodeType) {
+  if (node.node_type !== 'node') return;
+  const { error } = await db.rpc('mymain_create_special_node', {
+    parent_node_id: node.id,
+    special_node_type: nodeType
   });
   if (error) return alert(error.message);
 
@@ -850,6 +865,16 @@ addChildAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
   closeNodeMenu();
   if (node) addChild(node);
+};
+addLogAction.onclick = () => {
+  const node = nodes.find(item => item.id === menuNodeId);
+  closeNodeMenu();
+  if (node) addSpecialNode(node, 'log');
+};
+addLinksAction.onclick = () => {
+  const node = nodes.find(item => item.id === menuNodeId);
+  closeNodeMenu();
+  if (node) addSpecialNode(node, 'links');
 };
 editNodeAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
