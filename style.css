@@ -194,7 +194,8 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 .dialog-actions .secondary-button { border: 1px solid var(--accent); background: transparent; color: var(--accent-dark); }
 
 @media (min-width: 721px) {
-  #embedView { width: 100%; max-width: 1200px; margin-left: 0; margin-right: auto; }
+  .content-panel { padding-top: 24px; }
+  #nodeView, #logView, #linksView, #embedView { width: 100%; max-width: 1200px; margin-left: 0; margin-right: auto; }
 }
 
 @media (max-width: 720px) {
