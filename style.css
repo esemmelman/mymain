@@ -77,6 +77,8 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .account-row { flex: 0 0 auto; margin-left: auto; padding-left: 14px; border-left: 1px solid #d0d0d0; color: #526a62; font-size: .75rem; white-space: nowrap; }
 .account-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .account-row .text-button { flex: 0 0 auto; margin: 0; }
+.header-account-row { margin: 0; padding: 0; border: 0; color: #b9d2ca; }
+.header-account-row .text-button { color: #fff; }
 .icon-button { flex: 0 0 36px; width: 36px; min-height: 42px; border: 0; border-radius: 0; background: transparent; color: var(--accent-dark); font-size: 1.5rem; line-height: 1; }
 .icon-button:hover { background: #e1e9e6; }
 
@@ -92,7 +94,7 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .quick-form > .text-button { margin-top: 9px; }
 .secondary-button { min-height: 40px; padding: 0 14px; border: 1px solid var(--accent); border-radius: 8px; background: transparent; color: var(--accent-dark); font-weight: 700; }
 
-.tree { min-width: 0; display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; }
+.tree { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; }
 .tree-node { position: relative; min-width: 0; }
 .tree > .tree-node { flex: 0 0 auto; }
 .tree-row { position: relative; display: flex; align-items: stretch; min-height: 42px; }
@@ -186,8 +188,7 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
   .app-shell { min-height: calc(100vh - 78px); }
   .tree-panel { padding: 0 8px; }
   .menu-strip { min-height: 42px; }
-  .account-row span { display: none; }
-  .account-row { padding-left: 8px; }
+  .header-account-row span { display: none; }
   .tree-item { max-width: 220px; padding: 0 8px; }
   .content-panel { padding: 28px 18px 50px; }
   .welcome { margin-top: 20px; }

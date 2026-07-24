@@ -14,6 +14,7 @@ const authMessage = document.getElementById('authMessage');
 const email = document.getElementById('email');
 const password = document.getElementById('password');
 const appShell = document.getElementById('appShell');
+const accountControls = document.getElementById('accountControls');
 const userEmail = document.getElementById('userEmail');
 const signOutButton = document.getElementById('signOutButton');
 const newRootButton = document.getElementById('newRootButton');
@@ -701,12 +702,14 @@ async function handleSession(session) {
     selectedNodeId = null;
     expandedNodeIds.clear();
     appShell.hidden = true;
+    accountControls.hidden = true;
     authShell.hidden = false;
     setStatus('Sign in required', 'loading');
     return;
   }
 
   userEmail.textContent = currentUser.email;
+  accountControls.hidden = false;
   authShell.hidden = true;
   appShell.hidden = false;
   setStatus('Connecting...', 'loading');

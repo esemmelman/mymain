@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MyMain</title>
-  <link rel="stylesheet" href="style.css?v=1.4.5">
+  <link rel="stylesheet" href="style.css?v=1.4.6">
 </head>
 <body>
   <header class="app-header">
@@ -14,7 +14,11 @@
     </div>
     <div class="header-meta">
       <span id="connectionStatus" class="status" data-state="loading">Connecting...</span>
-      <span class="version-label">v1.4.5 · Android cascading menus</span>
+      <div id="accountControls" class="account-row header-account-row" hidden>
+        <span id="userEmail"></span>
+        <button id="signOutButton" class="text-button" type="button">Sign out</button>
+      </div>
+      <span class="version-label">v1.4.6 · Unobstructed menus</span>
     </div>
   </header>
 
@@ -42,10 +46,6 @@
       <div class="menu-strip">
         <button id="newRootButton" class="icon-button" type="button" aria-label="Add a root item" title="Add a root item">+</button>
         <nav id="tree" class="tree" aria-label="MyMain records"></nav>
-        <div class="account-row">
-          <span id="userEmail"></span>
-          <button id="signOutButton" class="text-button" type="button">Sign out</button>
-        </div>
       </div>
 
       <form id="rootForm" class="quick-form" hidden>
@@ -172,6 +172,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=1.4.5"></script>
+  <script src="app.js?v=1.4.6"></script>
 </body>
 </html>
