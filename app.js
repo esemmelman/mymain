@@ -375,14 +375,16 @@ function renderTree() {
   tree.replaceChildren();
   const roots = getChildren(null);
   emptyTree.hidden = roots.length > 0;
-  roots.forEach(root => appendNode(root));
+  roots.forEach(root => appendNode(root, tree));
 }
 
-function appendNode(node) {
+function appendNode(node, container) {
   const children = getChildren(node.id);
+  const nodeGroup = document.createElement('div');
+  nodeGroup.className = 'tree-node';
+
   const row = document.createElement('div');
   row.className = 'tree-row';
-  row.style.setProperty('--indent', `${(node.depth - 1) * 20}px`);
 
   const itemButton = document.createElement('button');
   itemButton.type = 'button';
@@ -423,10 +425,14 @@ function appendNode(node) {
   actionsButton.onclick = event => openNodeMenu(node.id, event.currentTarget);
 
   row.append(itemButton, actionsButton);
-  tree.append(row);
+  nodeGroup.append(row);
+  container.append(nodeGroup);
 
   if (expandedNodeIds.has(node.id)) {
-    children.forEach(child => appendNode(child));
+    const childList = document.createElement('div');
+    childList.className = 'tree-children';
+    nodeGroup.append(childList);
+    children.forEach(child => appendNode(child, childList));
   }
 }
 
