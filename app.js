@@ -404,13 +404,6 @@ function appendNode(node, container) {
   const label = document.createElement('span');
   label.textContent = node.name;
   itemButton.append(chevron);
-  if (node.node_type !== 'log') {
-    const icon = document.createElement('span');
-    icon.className = 'node-icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = '•';
-    itemButton.append(icon);
-  }
   itemButton.append(label);
   itemButton.onclick = () => selectNode(node.id);
   itemButton.oncontextmenu = event => {

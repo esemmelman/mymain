@@ -125,7 +125,6 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .tree-item[aria-current="true"] { background: var(--accent-soft); color: var(--accent-dark); box-shadow: inset 0 -3px 0 var(--accent); }
 .tree-chevron { display: none; }
 .tree-children .has-children > .tree-row .tree-chevron { display: inline-block; order: 3; width: 12px; margin-left: auto; font-size: .75em; transform: none; }
-.node-icon { display: inline-block; width: 12px; color: #277565; }
 .empty-note { margin: 8px 0 12px; color: var(--muted); font-size: .82rem; line-height: 1.4; }
 
 .context-menu { position: fixed; z-index: 1000; width: 180px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: 0 14px 35px rgba(36, 49, 45, .2); }
