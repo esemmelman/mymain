@@ -382,6 +382,7 @@ function appendNode(node, container) {
   const children = getChildren(node.id);
   const nodeGroup = document.createElement('div');
   nodeGroup.className = 'tree-node';
+  if (children.length) nodeGroup.classList.add('has-children');
 
   const row = document.createElement('div');
   row.className = 'tree-row';
@@ -392,7 +393,7 @@ function appendNode(node, container) {
   itemButton.title = node.name;
   itemButton.setAttribute('aria-current', String(node.id === selectedNodeId));
   if (children.length) {
-    itemButton.setAttribute('aria-expanded', String(expandedNodeIds.has(node.id)));
+    itemButton.setAttribute('aria-haspopup', 'menu');
   }
 
   const chevron = document.createElement('span');
@@ -411,7 +412,7 @@ function appendNode(node, container) {
     itemButton.append(icon);
   }
   itemButton.append(label);
-  itemButton.onclick = () => selectNode(node.id, true);
+  itemButton.onclick = () => selectNode(node.id);
   itemButton.oncontextmenu = event => {
     event.preventDefault();
     openNodeMenu(node.id, event.currentTarget);
@@ -428,9 +429,10 @@ function appendNode(node, container) {
   nodeGroup.append(row);
   container.append(nodeGroup);
 
-  if (expandedNodeIds.has(node.id)) {
+  if (children.length) {
     const childList = document.createElement('div');
     childList.className = 'tree-children';
+    childList.setAttribute('role', 'menu');
     nodeGroup.append(childList);
     children.forEach(child => appendNode(child, childList));
   }
