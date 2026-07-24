@@ -112,7 +112,7 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
   opacity: 0;
   pointer-events: none;
 }
-.tree-node:hover > .tree-children, .tree-node:focus-within > .tree-children { visibility: visible; opacity: 1; pointer-events: auto; }
+.tree-node:hover > .tree-children, .tree-node:focus-within > .tree-children, .tree-node.touch-open > .tree-children { visibility: visible; opacity: 1; pointer-events: auto; }
 .tree-children .tree-node > .tree-children { top: -5px; left: 100%; }
 .tree-children .tree-row { width: 100%; min-height: 36px; }
 .tree-children .tree-item { flex: 1; max-width: none; }
@@ -185,10 +185,10 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
   .auth-shell { min-height: calc(100vh - 78px); }
   .app-shell { min-height: calc(100vh - 78px); }
   .tree-panel { padding: 0 8px; }
-  .menu-strip { min-height: 46px; }
+  .menu-strip { min-height: 42px; }
   .account-row span { display: none; }
   .account-row { padding-left: 8px; }
-  .tree-item { max-width: 170px; padding: 0 7px; }
+  .tree-item { max-width: 220px; padding: 0 8px; }
   .content-panel { padding: 28px 18px 50px; }
   .welcome { margin-top: 20px; }
 }

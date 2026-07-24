@@ -405,7 +405,19 @@ function appendNode(node, container) {
   label.textContent = node.name;
   itemButton.append(chevron);
   itemButton.append(label);
-  itemButton.onclick = () => selectNode(node.id);
+  itemButton.onclick = event => {
+    const usesTouchMenus = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (usesTouchMenus && children.length && !nodeGroup.classList.contains('touch-open')) {
+      event.preventDefault();
+      tree.querySelectorAll('.tree-node.touch-open').forEach(openNode => {
+        if (!openNode.contains(nodeGroup)) openNode.classList.remove('touch-open');
+      });
+      nodeGroup.classList.add('touch-open');
+      itemButton.setAttribute('aria-expanded', 'true');
+      return;
+    }
+    selectNode(node.id);
+  };
   itemButton.oncontextmenu = event => {
     event.preventDefault();
     openNodeMenu(node.id, event.currentTarget);
@@ -889,12 +901,18 @@ deleteNodeAction.onclick = () => {
 };
 
 document.addEventListener('click', event => {
+  if (!tree.contains(event.target)) {
+    tree.querySelectorAll('.tree-node.touch-open').forEach(node => node.classList.remove('touch-open'));
+  }
   if (!nodeMenu.hidden && !nodeMenu.contains(event.target) && !event.target.closest('.tree-actions, .secondary-button')) {
     closeNodeMenu();
   }
 });
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeNodeMenu();
+  if (event.key === 'Escape') {
+    closeNodeMenu();
+    tree.querySelectorAll('.tree-node.touch-open').forEach(node => node.classList.remove('touch-open'));
+  }
 });
 window.addEventListener('blur', closeNodeMenu);
 
