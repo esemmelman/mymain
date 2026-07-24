@@ -49,10 +49,23 @@ const linkUrl = document.getElementById('linkUrl');
 const linkMessage = document.getElementById('linkMessage');
 const linksList = document.getElementById('linksList');
 const linkCount = document.getElementById('linkCount');
+const embedView = document.getElementById('embedView');
+const embedTitle = document.getElementById('embedTitle');
+const embedFrame = document.getElementById('embedFrame');
+const embedExternalLink = document.getElementById('embedExternalLink');
+const embedActionsButton = document.getElementById('embedActionsButton');
+const embedDialog = document.getElementById('embedDialog');
+const embedForm = document.getElementById('embedForm');
+const embedLocation = document.getElementById('embedLocation');
+const embedName = document.getElementById('embedName');
+const embedUrl = document.getElementById('embedUrl');
+const embedMessage = document.getElementById('embedMessage');
+const cancelEmbedButton = document.getElementById('cancelEmbedButton');
 const nodeMenu = document.getElementById('nodeMenu');
 const addChildAction = document.getElementById('addChildAction');
 const addLogAction = document.getElementById('addLogAction');
 const addLinksAction = document.getElementById('addLinksAction');
+const addEmbedAction = document.getElementById('addEmbedAction');
 const editNodeAction = document.getElementById('editNodeAction');
 const deleteNodeAction = document.getElementById('deleteNodeAction');
 
@@ -62,6 +75,7 @@ let nodes = [];
 let selectedNodeId = null;
 let menuNodeId = null;
 let promotedRootId = null;
+let embedParentId = null;
 const expandedNodeIds = new Set();
 
 function getWorkspaceStateKey() {
@@ -468,19 +482,31 @@ function selectNode(id, toggleChildren = false) {
   if (node.node_type === 'log') {
     nodeView.hidden = true;
     linksView.hidden = true;
+    embedView.hidden = true;
     logView.hidden = false;
     logTitle.textContent = node.name;
     loadLogEntries(node.id);
   } else if (node.node_type === 'links') {
     nodeView.hidden = true;
     logView.hidden = true;
+    embedView.hidden = true;
     linksView.hidden = false;
     const parent = nodes.find(item => item.id === node.parent_id);
     linksTitle.textContent = parent ? parent.name : 'Links';
     loadLinks(node.id);
+  } else if (node.node_type === 'embed') {
+    nodeView.hidden = true;
+    logView.hidden = true;
+    linksView.hidden = true;
+    embedView.hidden = false;
+    embedTitle.textContent = node.name;
+    embedFrame.title = node.name;
+    embedFrame.src = node.content;
+    embedExternalLink.href = node.content;
   } else {
     logView.hidden = true;
     linksView.hidden = true;
+    embedView.hidden = true;
     nodeView.hidden = false;
     nodeLevel.textContent = `Level ${node.depth}`;
     nodeTitle.textContent = node.name;
@@ -496,6 +522,8 @@ function showWelcome() {
   nodeView.hidden = true;
   logView.hidden = true;
   linksView.hidden = true;
+  embedView.hidden = true;
+  embedFrame.removeAttribute('src');
   welcome.hidden = false;
   saveWorkspaceState();
   renderTree();
@@ -632,6 +660,7 @@ function openNodeMenu(id, anchor) {
   addChildAction.hidden = !isRegularNode || node.depth >= 4;
   addLogAction.hidden = !isRegularNode || children.some(child => child.node_type === 'log');
   addLinksAction.hidden = !isRegularNode || children.some(child => child.node_type === 'links');
+  addEmbedAction.hidden = !isRegularNode || node.depth >= 5;
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
@@ -677,6 +706,16 @@ async function addSpecialNode(node, nodeType) {
   expandedNodeIds.add(node.id);
   saveWorkspaceState();
   await loadNodes();
+}
+
+function openEmbedDialog(node) {
+  if (node.node_type !== 'node' || node.depth >= 5) return;
+  embedParentId = node.id;
+  embedForm.reset();
+  embedLocation.textContent = `Save beneath “${node.name}”. The URL is stored when this page is created.`;
+  setMessage(embedMessage, 'Some websites do not permit embedding.');
+  embedDialog.showModal();
+  embedName.focus();
 }
 
 async function renameNode(node) {
@@ -803,6 +842,50 @@ rootForm.onsubmit = async event => {
   await loadNodes();
 };
 
+cancelEmbedButton.onclick = () => embedDialog.close();
+embedDialog.addEventListener('close', () => {
+  embedParentId = null;
+  embedForm.reset();
+  setMessage(embedMessage, '');
+});
+
+embedForm.onsubmit = async event => {
+  event.preventDefault();
+  const parent = nodes.find(node => node.id === embedParentId && node.node_type === 'node');
+  if (!parent) return embedDialog.close();
+
+  let url;
+  try {
+    url = new URL(embedUrl.value.trim());
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+  } catch {
+    return setMessage(embedMessage, 'Enter a complete address beginning with http:// or https://.', 'error');
+  }
+
+  const name = embedName.value.trim();
+  if (!name) return;
+  const submitButton = embedForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
+  setMessage(embedMessage, 'Creating page...');
+  const { data, error } = await db
+    .from('mymain_nodes')
+    .insert({
+      parent_id: parent.id,
+      name,
+      node_type: 'embed',
+      depth: parent.depth + 1,
+      content: url.href
+    })
+    .select('id')
+    .single();
+  submitButton.disabled = false;
+
+  if (error) return setMessage(embedMessage, error.message, 'error');
+  embedDialog.close();
+  await loadNodes();
+  selectNode(data.id);
+};
+
 nodeContentForm.onsubmit = async event => {
   event.preventDefault();
   const node = nodes.find(item => item.id === selectedNodeId && item.node_type !== 'log');
@@ -885,6 +968,9 @@ nodeActionsButton.onclick = event => {
 logActionsButton.onclick = event => {
   if (selectedNodeId) openNodeMenu(selectedNodeId, event.currentTarget);
 };
+embedActionsButton.onclick = event => {
+  if (selectedNodeId) openNodeMenu(selectedNodeId, event.currentTarget);
+};
 
 addChildAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
@@ -900,6 +986,11 @@ addLinksAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
   closeNodeMenu();
   if (node) addSpecialNode(node, 'links');
+};
+addEmbedAction.onclick = () => {
+  const node = nodes.find(item => item.id === menuNodeId);
+  closeNodeMenu();
+  if (node) openEmbedDialog(node);
 };
 editNodeAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);

@@ -140,7 +140,7 @@ h2 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.45rem, 2.
 .welcome { max-width: 650px; margin-top: 12vh; }
 .welcome h2 { margin-bottom: 14px; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1.02; }
 .welcome > p:last-child { color: var(--muted); font-size: 1.08rem; }
-#nodeView, #logView, #linksView { max-width: 880px; margin: 0 auto; }
+#nodeView, #logView, #linksView, #embedView { max-width: 880px; margin: 0 auto; }
 .content-heading { margin-bottom: 28px; }
 .log-form, .node-content-form, .link-form { padding: clamp(18px, 3vw, 28px); }
 textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; line-height: 1.5; }
@@ -178,6 +178,20 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 .link-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 17px 4px; border-bottom: 1px solid var(--line); }
 .link-item a { min-width: 0; overflow-wrap: anywhere; color: var(--accent-dark); font-weight: 750; }
 .delete-link { padding: 7px 10px; border: 0; border-radius: 7px; background: #f7dddd; color: var(--danger); }
+.embed-heading-actions, .dialog-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.embed-heading-actions .secondary-button { display: inline-flex; align-items: center; text-decoration: none; }
+.embed-note { color: var(--muted); font-size: .85rem; }
+.embed-frame { display: block; width: 100%; min-height: 68vh; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.app-dialog { width: min(520px, calc(100% - 28px)); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); box-shadow: 0 20px 55px rgba(0, 0, 0, .28); }
+.app-dialog::backdrop { background: rgba(20, 27, 25, .5); }
+.app-dialog form { padding: 24px; }
+.app-dialog h2 { margin-bottom: 8px; }
+.dialog-description { color: var(--muted); }
+.app-dialog label { display: block; margin: 15px 0 7px; font-weight: 750; }
+.app-dialog input { width: 100%; height: 42px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; }
+.dialog-actions { margin-top: 16px; }
+.dialog-actions button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 750; }
+.dialog-actions .secondary-button { border: 1px solid var(--accent); background: transparent; color: var(--accent-dark); }
 
 @media (max-width: 720px) {
   html { font-size: 17px; }
@@ -191,5 +205,7 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
   .header-account-row span { display: none; }
   .tree-item { max-width: 220px; padding: 0 8px; }
   .content-panel { padding: 28px 18px 50px; }
+  .embed-heading-actions { align-items: stretch; flex-direction: column; }
+  .embed-frame { min-height: 72vh; }
   .welcome { margin-top: 20px; }
 }

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MyMain</title>
-  <link rel="stylesheet" href="style.css?v=1.4.7">
+  <link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 <body>
   <header class="app-header">
@@ -18,7 +18,7 @@
         <span id="userEmail"></span>
         <button id="signOutButton" class="text-button" type="button">Sign out</button>
       </div>
-      <span class="version-label">v1.4.7 · Promoted Android roots</span>
+      <span class="version-label">v1.5.0 · Embedded pages</span>
     </div>
   </header>
 
@@ -160,18 +160,50 @@
         </div>
         <div id="linksList" class="links-list"></div>
       </div>
+
+      <div id="embedView" hidden>
+        <div class="content-heading">
+          <div>
+            <p class="eyebrow">Embedded page</p>
+            <h2 id="embedTitle"></h2>
+          </div>
+          <div class="embed-heading-actions">
+            <a id="embedExternalLink" class="secondary-button" target="_blank" rel="noopener noreferrer">Open in new tab</a>
+            <button id="embedActionsButton" class="secondary-button" type="button">Node actions</button>
+          </div>
+        </div>
+        <p class="embed-note">If the page does not appear below, its website may prohibit embedding. Use “Open in new tab” instead.</p>
+        <iframe id="embedFrame" class="embed-frame" title="Embedded page" loading="lazy" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
     </section>
   </main>
+
+  <dialog id="embedDialog" class="app-dialog" aria-labelledby="embedDialogTitle">
+    <form id="embedForm">
+      <h2 id="embedDialogTitle">Add embedded page</h2>
+      <p id="embedLocation" class="dialog-description"></p>
+      <label for="embedName">Page name</label>
+      <input id="embedName" maxlength="100" autocomplete="off" required>
+      <label for="embedUrl">Page URL</label>
+      <input id="embedUrl" type="url" maxlength="2000" inputmode="url" autocomplete="url" placeholder="https://example.com/" required>
+      <p id="embedMessage" class="form-message" role="status"></p>
+      <div class="dialog-actions">
+        <button id="cancelEmbedButton" class="secondary-button" type="button">Cancel</button>
+        <button type="submit">Create page</button>
+      </div>
+    </form>
+  </dialog>
 
   <div id="nodeMenu" class="context-menu" role="menu" hidden>
     <button id="addChildAction" type="button" role="menuitem">Add child</button>
     <button id="addLogAction" type="button" role="menuitem">Add Log</button>
     <button id="addLinksAction" type="button" role="menuitem">Add Links</button>
+    <button id="addEmbedAction" type="button" role="menuitem">Add embedded page</button>
     <button id="editNodeAction" type="button" role="menuitem">Rename</button>
     <button id="deleteNodeAction" class="danger-action" type="button" role="menuitem">Delete</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=1.4.7"></script>
+  <script src="app.js?v=1.5.0"></script>
 </body>
 </html>

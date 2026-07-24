@@ -5,7 +5,7 @@ A secure four-level tree workspace with on-demand Logs and Links, dated log entr
 ## Setup
 
 1. In the existing Supabase project, open the SQL Editor.
-2. Run `supabase-schema.sql` once.
+2. Run `supabase-schema.sql`. Run it again after pulling a version that includes database features such as embedded pages; the script is designed to update the existing schema safely.
 3. Under Authentication > URL Configuration, allow:
    - `http://localhost:8000/`
    - `https://esemmelman.github.io/mymain/`
