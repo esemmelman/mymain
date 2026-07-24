@@ -61,6 +61,7 @@ let currentUser = null;
 let nodes = [];
 let selectedNodeId = null;
 let menuNodeId = null;
+let promotedRootId = null;
 const expandedNodeIds = new Set();
 
 function getWorkspaceStateKey() {
@@ -375,6 +376,10 @@ function isDescendant(candidateId, ancestorId) {
 function renderTree() {
   tree.replaceChildren();
   const roots = getChildren(null);
+  if (window.matchMedia('(hover: none), (pointer: coarse)').matches && promotedRootId) {
+    const promotedIndex = roots.findIndex(root => root.id === promotedRootId);
+    if (promotedIndex > 0) roots.unshift(...roots.splice(promotedIndex, 1));
+  }
   emptyTree.hidden = roots.length > 0;
   roots.forEach(root => appendNode(root, tree));
 }
@@ -408,6 +413,10 @@ function appendNode(node, container) {
   itemButton.append(label);
   itemButton.onclick = event => {
     const usesTouchMenus = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (usesTouchMenus && node.depth === 1) {
+      promotedRootId = node.id;
+      tree.prepend(nodeGroup);
+    }
     if (usesTouchMenus && children.length && !nodeGroup.classList.contains('touch-open')) {
       event.preventDefault();
       tree.querySelectorAll('.tree-node.touch-open').forEach(openNode => {
