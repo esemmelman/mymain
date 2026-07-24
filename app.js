@@ -880,7 +880,13 @@ embedForm.onsubmit = async event => {
     .single();
   submitButton.disabled = false;
 
-  if (error) return setMessage(embedMessage, error.message, 'error');
+  if (error) {
+    const schemaOutdated = error.message.includes('mymain_nodes_node_type_check');
+    const message = schemaOutdated
+      ? 'Database update required: run the latest supabase-schema.sql in the Supabase SQL Editor, then try again.'
+      : error.message;
+    return setMessage(embedMessage, message, 'error');
+  }
   embedDialog.close();
   await loadNodes();
   selectNode(data.id);

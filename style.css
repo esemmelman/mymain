@@ -193,6 +193,10 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 .dialog-actions button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 750; }
 .dialog-actions .secondary-button { border: 1px solid var(--accent); background: transparent; color: var(--accent-dark); }
 
+@media (min-width: 721px) {
+  #embedView { width: 100%; max-width: 1200px; margin-left: 0; margin-right: auto; }
+}
+
 @media (max-width: 720px) {
   html { font-size: 17px; }
   .app-header { min-height: 78px; padding: 14px 18px; }
