@@ -200,16 +200,28 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
 
 @media (max-width: 720px) {
   html { font-size: 17px; }
-  .app-header { min-height: 78px; padding: 14px 18px; }
+  .app-header { min-height: 52px; padding: 6px 10px; gap: 8px; white-space: nowrap; }
+  .app-header h1 { font-size: 1.15rem; }
   .app-header .eyebrow { display: none; }
-  .version-label { max-width: 170px; font-size: .64rem; }
-  .auth-shell { min-height: calc(100vh - 78px); }
-  .app-shell { min-height: calc(100vh - 78px); }
+  .header-meta { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+  .status { padding: 4px 7px; font-size: .68rem; }
+  .version-label { max-width: none; font-size: .66rem; }
+  .version-description { display: none; }
+  .header-account-row { gap: 0; }
+  .header-account-row .text-button { font-size: .7rem; }
+  .auth-shell { min-height: calc(100vh - 52px); }
+  .app-shell { min-height: calc(100vh - 52px); }
   .tree-panel { padding: 0 8px; }
   .menu-strip { min-height: 42px; }
   .header-account-row span { display: none; }
   .tree-item { max-width: 220px; padding: 0 8px; }
-  .content-panel { padding: 28px 18px 50px; }
+  .content-panel { padding: 12px 10px 40px; }
+  .content-heading { align-items: center; flex-wrap: nowrap; gap: 8px; margin-bottom: 12px; }
+  .content-heading > div:first-child { min-width: 0; display: flex; align-items: baseline; gap: 7px; }
+  .content-heading .eyebrow { flex: 0 0 auto; margin: 0; font-size: .62rem; letter-spacing: .08em; }
+  .content-heading h2 { min-width: 0; overflow: hidden; font-size: 1.15rem; text-overflow: ellipsis; white-space: nowrap; }
+  .content-heading > .secondary-button { flex: 0 0 auto; min-height: 34px; padding: 0 9px; font-size: .72rem; }
+  .node-content-form, .log-form, .link-form { padding: 12px; }
   .embed-heading-actions { align-items: stretch; flex-direction: column; }
   .embed-frame { min-height: 72vh; }
   .welcome { margin-top: 20px; }
