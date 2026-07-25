@@ -215,6 +215,22 @@ textarea { display: block; min-height: 120px; resize: vertical; padding: 13px; l
   .menu-strip { min-height: 42px; }
   .header-account-row span { display: none; }
   .tree-item { max-width: 220px; padding: 0 8px; }
+  .tree-children .tree-node > .tree-children {
+    position: static;
+    display: none;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding: 3px 0 3px 14px;
+    visibility: visible;
+    border: 0;
+    border-top: 1px solid #d8d8d8;
+    background: #ededed;
+    box-shadow: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .tree-children .tree-node.touch-open > .tree-children { display: block; }
   .content-panel { padding: 12px 10px 40px; }
   .content-heading { align-items: center; flex-wrap: nowrap; gap: 8px; margin-bottom: 12px; }
   .content-heading > div:first-child { min-width: 0; display: flex; align-items: baseline; gap: 7px; }
