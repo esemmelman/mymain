@@ -68,6 +68,16 @@ const addLinksAction = document.getElementById('addLinksAction');
 const addEmbedAction = document.getElementById('addEmbedAction');
 const editNodeAction = document.getElementById('editNodeAction');
 const deleteNodeAction = document.getElementById('deleteNodeAction');
+const createGoogleWorkspaceAction = document.getElementById('createGoogleWorkspaceAction');
+const googleWorkspaceDialog = document.getElementById('googleWorkspaceDialog');
+const googleWorkspaceForm = document.getElementById('googleWorkspaceForm');
+const googleWorkspaceLocation = document.getElementById('googleWorkspaceLocation');
+const googleWorkspaceName = document.getElementById('googleWorkspaceName');
+const googleWorkspaceFullTitle = document.getElementById('googleWorkspaceFullTitle');
+const googleWorkspaceTemplate = document.getElementById('googleWorkspaceTemplate');
+const googleWorkspaceStarterDocs = document.getElementById('googleWorkspaceStarterDocs');
+const googleWorkspaceMessage = document.getElementById('googleWorkspaceMessage');
+const cancelGoogleWorkspaceButton = document.getElementById('cancelGoogleWorkspaceButton');
 
 let authMode = 'signin';
 let currentUser = null;
@@ -76,7 +86,32 @@ let selectedNodeId = null;
 let menuNodeId = null;
 let promotedRootId = null;
 let embedParentId = null;
+let googleWorkspaceParentId = null;
+let googleAccessToken = null;
 const expandedNodeIds = new Set();
+
+const GOOGLE_WORKSPACE_TEMPLATES = {
+  presentation: {
+    folders: ['Research', 'Slides', 'Images', 'Handouts', 'Room', 'Final'],
+    documents: [
+      ['Research', 'Research Notes', 'Research Notes\n\nSource:\nAuthor:\nLink:\nDate reviewed:\n\nMain point:\nWhy it matters:\nUseful example:\nPossible slide:\nQuestions or concerns:\n'],
+      ['Slides', 'Presentation Outline', 'Presentation Outline\n\nPurpose:\nAudience:\nMain message:\n\nOpening\n\nKey points\n\nActivity or discussion\n\nSummary and questions\n'],
+      ['Images', 'Image Sources', 'Image Sources\n\nImage:\nSource:\nPermission or license:\nIntended slide:\n'],
+      ['Handouts', 'Handout Draft', 'Handout Draft\n\nTitle:\nMain ideas:\nReflection questions:\nResources:\n'],
+      ['Room', 'Room and Snacks Checklist', 'Room and Snacks Checklist\n\nRoom reserved: ☐\nDate and time confirmed: ☐\nSeating layout selected: ☐\nProjector checked: ☐\nAudio checked: ☐\nAccessibility checked: ☐\nSnacks selected: ☐\nDietary needs checked: ☐\nCleanup arranged: ☐\n'],
+      ['Final', 'Final Run Sheet', 'Final Run Sheet\n\nArrival time:\nRoom setup:\nEquipment check:\nMaterials:\nPresentation timing:\nCleanup:\n']
+    ]
+  },
+  research: {
+    folders: ['Sources', 'Notes', 'Data', 'Drafts', 'Images', 'Final'],
+    documents: [['Notes', 'Research Notes', 'Research Notes\n\nQuestion:\nSource:\nFinding:\nSignificance:\nFollow-up:\n'], ['Drafts', 'Working Draft', 'Working Draft\n\nPurpose:\nEvidence:\nAnalysis:\nConclusion:\n']]
+  },
+  event: {
+    folders: ['Planning', 'Venue', 'Guests', 'Food', 'Materials', 'Final'],
+    documents: [['Planning', 'Event Plan', 'Event Plan\n\nPurpose:\nDate and time:\nAudience:\nBudget:\nSchedule:\n'], ['Venue', 'Venue Checklist', 'Venue Checklist\n\nReserved: ☐\nLayout: ☐\nEquipment: ☐\nAccessibility: ☐\n'], ['Final', 'Event Run Sheet', 'Event Run Sheet\n\nBefore event:\nDuring event:\nAfter event:\n']]
+  },
+  blank: { folders: [], documents: [] }
+};
 
 function getWorkspaceStateKey() {
   return currentUser ? `mymain-workspace-${currentUser.id}` : null;
@@ -661,6 +696,7 @@ function openNodeMenu(id, anchor) {
   addLogAction.hidden = !isRegularNode || children.some(child => child.node_type === 'log');
   addLinksAction.hidden = !isRegularNode || children.some(child => child.node_type === 'links');
   addEmbedAction.hidden = !isRegularNode || node.depth >= 5;
+  createGoogleWorkspaceAction.hidden = !isRegularNode || node.depth >= 5;
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
@@ -706,6 +742,109 @@ async function addSpecialNode(node, nodeType) {
   expandedNodeIds.add(node.id);
   saveWorkspaceState();
   await loadNodes();
+}
+
+function openGoogleWorkspaceDialog(node) {
+  if (node.node_type !== 'node' || node.depth >= 5) return;
+  googleWorkspaceParentId = node.id;
+  googleWorkspaceForm.reset();
+  googleWorkspaceName.value = node.name.length <= 12 ? node.name : '';
+  googleWorkspaceTemplate.value = 'presentation';
+  googleWorkspaceStarterDocs.checked = true;
+  googleWorkspaceLocation.textContent = `Drive links will be saved beneath “${node.name}”.`;
+  setMessage(googleWorkspaceMessage, 'MyMain will request permission to create and manage only the Drive files it creates.');
+  googleWorkspaceDialog.showModal();
+  googleWorkspaceName.focus();
+}
+
+function requestGoogleDriveToken() {
+  return new Promise((resolve, reject) => {
+    const clientId = window.MYMAIN_GOOGLE_CLIENT_ID?.trim();
+    if (!clientId) return reject(new Error('Add your Google OAuth client ID to google-config.js first.'));
+    if (!window.google?.accounts?.oauth2) return reject(new Error('Google authorization is still loading. Check your connection and try again.'));
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: response => {
+        if (response.error) reject(new Error(response.error_description || response.error));
+        else { googleAccessToken = response.access_token; resolve(googleAccessToken); }
+      },
+      error_callback: error => reject(new Error(error.message || error.type || 'Google authorization did not complete.'))
+    });
+    tokenClient.requestAccessToken({ prompt: googleAccessToken ? '' : 'consent' });
+  });
+}
+
+async function callGoogleApi(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: { Authorization: `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json', ...(options.headers || {}) }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error?.message || `Google request failed (${response.status}).`);
+  return data;
+}
+
+async function createDriveResource(name, mimeType, parentId) {
+  const requestBody = { name, mimeType };
+  if (parentId) requestBody.parents = [parentId];
+  return callGoogleApi('https://www.googleapis.com/drive/v3/files?fields=id,name,mimeType,webViewLink', { method: 'POST', body: JSON.stringify(requestBody) });
+}
+
+async function populateGoogleDocument(documentId, content) {
+  if (!content) return;
+  await callGoogleApi(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(documentId)}:batchUpdate`, {
+    method: 'POST', body: JSON.stringify({ requests: [{ insertText: { location: { index: 1 }, text: content } }] })
+  });
+}
+
+async function ensureLinksNode(parent) {
+  const existing = nodes.find(node => node.parent_id === parent.id && node.node_type === 'links');
+  if (existing) return existing;
+  const { data, error } = await db.rpc('mymain_create_special_node', { parent_node_id: parent.id, special_node_type: 'links' });
+  if (error) throw error;
+  return data;
+}
+
+async function saveGoogleWorkspaceLinks(parent, resources) {
+  const linksNode = await ensureLinksNode(parent);
+  const rows = resources.map(resource => ({
+    node_id: linksNode.id,
+    label: resource.label,
+    url: resource.webViewLink || (resource.mimeType === 'application/vnd.google-apps.folder'
+      ? `https://drive.google.com/drive/folders/${resource.id}`
+      : `https://docs.google.com/document/d/${resource.id}/edit`)
+  }));
+  const { error } = await db.from('mymain_links').insert(rows);
+  if (error) throw error;
+  await loadNodes();
+  expandedNodeIds.add(parent.id);
+  selectNode(linksNode.id);
+}
+
+async function createGoogleWorkspace(parent, settings) {
+  await requestGoogleDriveToken();
+  const template = GOOGLE_WORKSPACE_TEMPLATES[settings.template] || GOOGLE_WORKSPACE_TEMPLATES.blank;
+  const root = await createDriveResource(settings.name, 'application/vnd.google-apps.folder');
+  const resources = [{ ...root, label: `${settings.name} — Drive folder` }];
+  const folderIds = new Map();
+  for (const folderName of template.folders) {
+    setMessage(googleWorkspaceMessage, `Creating ${folderName} folder...`);
+    const folder = await createDriveResource(folderName, 'application/vnd.google-apps.folder', root.id);
+    folderIds.set(folderName, folder.id);
+    resources.push({ ...folder, label: `${settings.name} — ${folderName}` });
+  }
+  if (settings.starterDocs) {
+    for (const [folderName, documentName, starterContent] of template.documents) {
+      setMessage(googleWorkspaceMessage, `Creating ${documentName}...`);
+      const document = await createDriveResource(documentName, 'application/vnd.google-apps.document', folderIds.get(folderName) || root.id);
+      await populateGoogleDocument(document.id, (settings.fullTitle ? `${settings.fullTitle}\n\n` : '') + starterContent);
+      resources.push({ ...document, label: `${settings.name} — ${documentName}` });
+    }
+  }
+  setMessage(googleWorkspaceMessage, 'Saving Drive links in MyMain...');
+  await saveGoogleWorkspaceLinks(parent, resources);
+  return root;
 }
 
 function openEmbedDialog(node) {
@@ -892,6 +1031,37 @@ embedForm.onsubmit = async event => {
   selectNode(data.id);
 };
 
+cancelGoogleWorkspaceButton.onclick = () => googleWorkspaceDialog.close();
+googleWorkspaceDialog.addEventListener('close', () => {
+  googleWorkspaceParentId = null;
+  googleWorkspaceForm.reset();
+  setMessage(googleWorkspaceMessage, '');
+});
+googleWorkspaceForm.onsubmit = async event => {
+  event.preventDefault();
+  const parent = nodes.find(node => node.id === googleWorkspaceParentId && node.node_type === 'node');
+  if (!parent) return googleWorkspaceDialog.close();
+  const settings = {
+    name: googleWorkspaceName.value.trim(),
+    fullTitle: googleWorkspaceFullTitle.value.trim(),
+    template: googleWorkspaceTemplate.value,
+    starterDocs: googleWorkspaceStarterDocs.checked
+  };
+  if (!settings.name) return;
+  const submitButton = googleWorkspaceForm.querySelector('[type="submit"]');
+  submitButton.disabled = true;
+  setMessage(googleWorkspaceMessage, 'Connecting to Google Drive...');
+  try {
+    const root = await createGoogleWorkspace(parent, settings);
+    googleWorkspaceDialog.close();
+    alert(`${root.name} was created in Google Drive and linked in MyMain.`);
+  } catch (error) {
+    setMessage(googleWorkspaceMessage, error.message || 'The Google workspace could not be created.', 'error');
+  } finally {
+    submitButton.disabled = false;
+  }
+};
+
 nodeContentForm.onsubmit = async event => {
   event.preventDefault();
   const node = nodes.find(item => item.id === selectedNodeId && item.node_type !== 'log');
@@ -997,6 +1167,11 @@ addEmbedAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
   closeNodeMenu();
   if (node) openEmbedDialog(node);
+};
+createGoogleWorkspaceAction.onclick = () => {
+  const node = nodes.find(item => item.id === menuNodeId);
+  closeNodeMenu();
+  if (node) openGoogleWorkspaceDialog(node);
 };
 editNodeAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
