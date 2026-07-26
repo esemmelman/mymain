@@ -557,7 +557,9 @@ function selectNode(id, toggleChildren = false) {
     embedTitle.textContent = node.name;
     embedFrame.title = node.name;
     embedFrame.src = node.content;
-    embedExternalLink.href = node.content;
+    embedExternalLink.href = node.content.includes('docs.google.com/document/') && node.content.endsWith('/preview')
+      ? node.content.replace(/\/preview$/, '/edit')
+      : node.content;
   } else {
     logView.hidden = true;
     linksView.hidden = true;
@@ -716,7 +718,7 @@ function openNodeMenu(id, anchor) {
   addLogAction.hidden = !isRegularNode || children.some(child => child.node_type === 'log');
   addLinksAction.hidden = !isRegularNode || children.some(child => child.node_type === 'links');
   addEmbedAction.hidden = !isRegularNode || node.depth >= 5;
-  createGoogleWorkspaceAction.hidden = !isRegularNode || node.depth >= 5;
+  createGoogleWorkspaceAction.hidden = !isRegularNode || node.depth >= 4;
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
@@ -765,7 +767,7 @@ async function addSpecialNode(node, nodeType) {
 }
 
 function openGoogleWorkspaceDialog(node) {
-  if (node.node_type !== 'node' || node.depth >= 5) return;
+  if (node.node_type !== 'node' || node.depth >= 4) return;
   googleWorkspaceParentId = node.id;
   googleWorkspaceForm.reset();
   googleWorkspaceName.value = node.name.length <= 12 ? node.name : '';
@@ -825,7 +827,8 @@ async function populateGoogleChecklist(documentId, fullTitle, items) {
     method: 'POST',
     body: JSON.stringify({ requests: [
       { insertText: { location: { index: 1 }, text } },
-      { createParagraphBullets: { range: { startIndex: 1 + prefix.length, endIndex: 1 + text.length }, bulletPreset: 'BULLET_CHECKBOX' } }
+      { createParagraphBullets: { range: { startIndex: 1 + prefix.length, endIndex: 1 + text.length }, bulletPreset: 'BULLET_CHECKBOX' } },
+      { updateParagraphStyle: { range: { startIndex: 1 + prefix.length, endIndex: 1 + text.length }, paragraphStyle: { spaceBelow: { magnitude: 12, unit: 'PT' } }, fields: 'spaceBelow' } }
     ] })
   });
 }
@@ -849,9 +852,23 @@ async function saveGoogleWorkspaceLinks(parent, resources) {
   }));
   const { error } = await db.from('mymain_links').insert(rows);
   if (error) throw error;
+  const checklist = resources.find(resource => resource.isChecklist);
+  let checklistNodeId = null;
+  if (checklist) {
+    const { data, error: embedError } = await db.from('mymain_nodes').insert({
+      parent_id: linksNode.id,
+      name: 'Project Checklist',
+      node_type: 'embed',
+      depth: linksNode.depth + 1,
+      content: `https://docs.google.com/document/d/${checklist.id}/preview`
+    }).select('id').single();
+    if (embedError) throw new Error(`Drive links were saved, but the checklist preview needs the v1.6.2 database update: ${embedError.message}`);
+    checklistNodeId = data.id;
+  }
   await loadNodes();
   expandedNodeIds.add(parent.id);
-  selectNode(linksNode.id);
+  expandedNodeIds.add(linksNode.id);
+  selectNode(checklistNodeId || linksNode.id);
 }
 
 async function createGoogleWorkspace(parent, settings) {
@@ -872,7 +889,7 @@ async function createGoogleWorkspace(parent, settings) {
       const document = await createDriveResource(documentName, 'application/vnd.google-apps.document', folderIds.get(folderName) || root.id);
       if (documentType === 'checklist') await populateGoogleChecklist(document.id, settings.fullTitle, starterContent);
       else await populateGoogleDocument(document.id, (settings.fullTitle ? `${settings.fullTitle}\n\n` : '') + starterContent);
-      resources.push({ ...document, label: `${settings.name} — ${documentName}` });
+      resources.push({ ...document, label: `${settings.name} — ${documentName}`, isChecklist: documentType === 'checklist' });
     }
   }
   setMessage(googleWorkspaceMessage, 'Saving Drive links in MyMain...');

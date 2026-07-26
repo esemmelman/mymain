@@ -105,8 +105,12 @@ begin
     raise exception 'Invalid parent node';
   end if;
 
-  if parent_node.depth >= 5 or parent_node.node_type <> 'node' then
+  if parent_node.depth >= 5 then
     raise exception 'Nodes cannot be nested beyond level 5';
+  end if;
+
+  if new.node_type <> 'embed' and parent_node.node_type <> 'node' then
+    raise exception 'Only embedded pages can be nested beneath special pages';
   end if;
 
   new.depth := parent_node.depth + 1;
@@ -118,8 +122,8 @@ begin
     raise exception 'Links nodes must be beneath regular nodes';
   end if;
 
-  if new.node_type = 'embed' and parent_node.node_type <> 'node' then
-    raise exception 'Embedded pages must be beneath regular nodes';
+  if new.node_type = 'embed' and parent_node.node_type not in ('node', 'links') then
+    raise exception 'Embedded pages must be beneath regular or Links nodes';
   end if;
 
   if new.node_type = 'embed' and (char_length(new.content) > 2000 or trim(new.content) !~* '^https?://') then
