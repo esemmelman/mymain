@@ -94,6 +94,26 @@ const GOOGLE_WORKSPACE_TEMPLATES = {
   presentation: {
     folders: ['Research', 'Slides', 'Images', 'Handouts', 'Room', 'Final'],
     documents: [
+      ['', 'Project Checklist', [
+        'Brainstorm goals and ideas',
+        'Define the purpose, audience, and main message',
+        'Research the topic and identify useful sources',
+        'Record research notes and source links',
+        'Draft the presentation outline',
+        'Reserve the room',
+        'Plan the room layout and equipment',
+        'Decide on snacks and check dietary needs',
+        'Develop the slides',
+        'Select images and record their sources',
+        'Draft the handout',
+        'Review the content and one-hour timing',
+        'Rehearse the complete presentation',
+        'Revise the slides, handout, and activities',
+        'Confirm the room and equipment',
+        'Purchase or prepare snacks and materials',
+        'Complete the final rehearsal',
+        'Deliver the presentation'
+      ], 'checklist'],
       ['Research', 'Research Notes', 'Research Notes\n\nSource:\nAuthor:\nLink:\nDate reviewed:\n\nMain point:\nWhy it matters:\nUseful example:\nPossible slide:\nQuestions or concerns:\n'],
       ['Slides', 'Presentation Outline', 'Presentation Outline\n\nPurpose:\nAudience:\nMain message:\n\nOpening\n\nKey points\n\nActivity or discussion\n\nSummary and questions\n'],
       ['Images', 'Image Sources', 'Image Sources\n\nImage:\nSource:\nPermission or license:\nIntended slide:\n'],
@@ -798,6 +818,18 @@ async function populateGoogleDocument(documentId, content) {
   });
 }
 
+async function populateGoogleChecklist(documentId, fullTitle, items) {
+  const prefix = `${fullTitle ? `${fullTitle}\n\n` : ''}Project Checklist\n\n`;
+  const text = `${prefix}${items.join('\n')}\n`;
+  await callGoogleApi(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(documentId)}:batchUpdate`, {
+    method: 'POST',
+    body: JSON.stringify({ requests: [
+      { insertText: { location: { index: 1 }, text } },
+      { createParagraphBullets: { range: { startIndex: 1 + prefix.length, endIndex: 1 + text.length }, bulletPreset: 'BULLET_CHECKBOX' } }
+    ] })
+  });
+}
+
 async function ensureLinksNode(parent) {
   const existing = nodes.find(node => node.parent_id === parent.id && node.node_type === 'links');
   if (existing) return existing;
@@ -835,10 +867,11 @@ async function createGoogleWorkspace(parent, settings) {
     resources.push({ ...folder, label: `${settings.name} — ${folderName}` });
   }
   if (settings.starterDocs) {
-    for (const [folderName, documentName, starterContent] of template.documents) {
+    for (const [folderName, documentName, starterContent, documentType] of template.documents) {
       setMessage(googleWorkspaceMessage, `Creating ${documentName}...`);
       const document = await createDriveResource(documentName, 'application/vnd.google-apps.document', folderIds.get(folderName) || root.id);
-      await populateGoogleDocument(document.id, (settings.fullTitle ? `${settings.fullTitle}\n\n` : '') + starterContent);
+      if (documentType === 'checklist') await populateGoogleChecklist(document.id, settings.fullTitle, starterContent);
+      else await populateGoogleDocument(document.id, (settings.fullTitle ? `${settings.fullTitle}\n\n` : '') + starterContent);
       resources.push({ ...document, label: `${settings.name} — ${documentName}` });
     }
   }

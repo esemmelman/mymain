@@ -1,6 +1,6 @@
 # Google Drive workspace setup
 
-MyMain v1.6.0 can create reusable folder and starter-document workspaces in Google Drive.
+MyMain v1.6.1 can create reusable folder, starter-document, and clickable checklist workspaces in Google Drive.
 
 1. In Google Cloud Console, create or select a project.
 2. Enable the Google Drive API and Google Docs API.
