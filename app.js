@@ -864,18 +864,17 @@ async function saveGoogleWorkspaceLinks(parent, resources) {
   let checklistNodeId = null;
   if (checklist) {
     const { data, error: embedError } = await db.from('mymain_nodes').insert({
-      parent_id: linksNode.id,
+      parent_id: parent.id,
       name: 'Project Checklist',
       node_type: 'embed',
-      depth: linksNode.depth + 1,
+      depth: parent.depth + 1,
       content: `https://docs.google.com/document/d/${checklist.id}/preview`
     }).select('id').single();
-    if (embedError) throw new Error(`Drive links were saved, but the checklist preview needs the v1.6.2 database update: ${embedError.message}`);
+    if (embedError) throw new Error(`Drive links were saved, but the checklist preview could not be created: ${embedError.message}`);
     checklistNodeId = data.id;
   }
   await loadNodes();
   expandedNodeIds.add(parent.id);
-  expandedNodeIds.add(linksNode.id);
   selectNode(checklistNodeId || linksNode.id);
 }
 

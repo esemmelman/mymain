@@ -105,12 +105,8 @@ begin
     raise exception 'Invalid parent node';
   end if;
 
-  if parent_node.depth >= 5 then
+  if parent_node.depth >= 5 or parent_node.node_type <> 'node' then
     raise exception 'Nodes cannot be nested beyond level 5';
-  end if;
-
-  if new.node_type <> 'embed' and parent_node.node_type <> 'node' then
-    raise exception 'Only embedded pages can be nested beneath special pages';
   end if;
 
   new.depth := parent_node.depth + 1;
@@ -122,8 +118,8 @@ begin
     raise exception 'Links nodes must be beneath regular nodes';
   end if;
 
-  if new.node_type = 'embed' and parent_node.node_type not in ('node', 'links') then
-    raise exception 'Embedded pages must be beneath regular or Links nodes';
+  if new.node_type = 'embed' and parent_node.node_type <> 'node' then
+    raise exception 'Embedded pages must be beneath regular nodes';
   end if;
 
   if new.node_type = 'embed' and (char_length(new.content) > 2000 or trim(new.content) !~* '^https?://') then
@@ -142,6 +138,21 @@ drop trigger if exists mymain_nodes_validate on public.mymain_nodes;
 create trigger mymain_nodes_validate
 before insert or update on public.mymain_nodes
 for each row execute function public.mymain_validate_node();
+
+update public.mymain_nodes as checklist
+set parent_id = workspace.id,
+    depth = workspace.depth + 1,
+    updated_at = now()
+from public.mymain_nodes as links,
+     public.mymain_nodes as workspace
+where checklist.parent_id = links.id
+  and checklist.node_type = 'embed'
+  and checklist.name = 'Project Checklist'
+  and links.node_type = 'links'
+  and links.parent_id = workspace.id
+  and workspace.node_type = 'node'
+  and checklist.user_id = links.user_id
+  and links.user_id = workspace.user_id;
 
 create or replace function public.mymain_validate_log_entry()
 returns trigger

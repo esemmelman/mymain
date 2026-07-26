@@ -1,8 +1,8 @@
 # Google Drive workspace setup
 
-MyMain v1.6.3 can create reusable folder, starter-document, and clickable checklist workspaces in Google Drive and add a checklist preview node beneath MyMain Links.
+MyMain v1.6.4 can create reusable folder, starter-document, and clickable checklist workspaces in Google Drive and add a checklist preview node alongside MyMain Links.
 
-After upgrading from a version earlier than v1.6.2, run the latest `supabase-schema.sql` once in the Supabase SQL Editor. This permits the generated checklist preview node to be stored beneath a Links node.
+After upgrading to v1.6.4, run the latest `supabase-schema.sql` once in the Supabase SQL Editor. It moves any existing Project Checklist from beneath Links to the workspace node and keeps future checklist nodes there.
 
 1. In Google Cloud Console, create or select a project.
 2. Enable the Google Drive API and Google Docs API.
