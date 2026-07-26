@@ -822,13 +822,21 @@ async function populateGoogleDocument(documentId, content) {
 
 async function populateGoogleChecklist(documentId, fullTitle, items) {
   const prefix = `${fullTitle ? `${fullTitle}\n\n` : ''}Project Checklist\n\n`;
-  const text = `${prefix}${items.join('\n')}\n`;
+  const text = `${prefix}${items.join('\n\n')}\n`;
+  let itemStartIndex = 1 + prefix.length;
+  const checkboxRequests = items.map(item => {
+    const request = { createParagraphBullets: {
+      range: { startIndex: itemStartIndex, endIndex: itemStartIndex + item.length + 1 },
+      bulletPreset: 'BULLET_CHECKBOX'
+    } };
+    itemStartIndex += item.length + 2;
+    return request;
+  });
   await callGoogleApi(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(documentId)}:batchUpdate`, {
     method: 'POST',
     body: JSON.stringify({ requests: [
       { insertText: { location: { index: 1 }, text } },
-      { createParagraphBullets: { range: { startIndex: 1 + prefix.length, endIndex: 1 + text.length }, bulletPreset: 'BULLET_CHECKBOX' } },
-      { updateParagraphStyle: { range: { startIndex: 1 + prefix.length, endIndex: 1 + text.length }, paragraphStyle: { spaceBelow: { magnitude: 12, unit: 'PT' } }, fields: 'spaceBelow' } }
+      ...checkboxRequests
     ] })
   });
 }
