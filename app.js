@@ -69,6 +69,7 @@ const addEmbedAction = document.getElementById('addEmbedAction');
 const editNodeAction = document.getElementById('editNodeAction');
 const deleteNodeAction = document.getElementById('deleteNodeAction');
 const createGoogleWorkspaceAction = document.getElementById('createGoogleWorkspaceAction');
+const exportChecklistToPmAction = document.getElementById('exportChecklistToPmAction');
 const googleWorkspaceDialog = document.getElementById('googleWorkspaceDialog');
 const googleWorkspaceForm = document.getElementById('googleWorkspaceForm');
 const googleWorkspaceLocation = document.getElementById('googleWorkspaceLocation');
@@ -719,6 +720,8 @@ function openNodeMenu(id, anchor) {
   addLinksAction.hidden = !isRegularNode || children.some(child => child.node_type === 'links');
   addEmbedAction.hidden = !isRegularNode || node.depth >= 5;
   createGoogleWorkspaceAction.hidden = !isRegularNode || node.depth >= 4;
+  const hasProjectChecklist = children.some(child => child.node_type === 'embed' && child.name === 'Project Checklist');
+  exportChecklistToPmAction.hidden = !(hasProjectChecklist || (node.node_type === 'embed' && node.name === 'Project Checklist'));
   nodeMenu.hidden = false;
 
   const rect = anchor.getBoundingClientRect();
@@ -1229,6 +1232,20 @@ createGoogleWorkspaceAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);
   closeNodeMenu();
   if (node) openGoogleWorkspaceDialog(node);
+};
+exportChecklistToPmAction.onclick = async () => {
+  const node = nodes.find(item => item.id === menuNodeId);
+  closeNodeMenu();
+  if (!node) return;
+  const workspace = node.name === 'Project Checklist' ? nodes.find(item => item.id === node.parent_id) : node;
+  const value = prompt('Project name:', workspace?.name || '');
+  if (value === null) return;
+  const projectName = value.trim();
+  if (!projectName) return alert('Enter a project name.');
+  const checklistItems = GOOGLE_WORKSPACE_TEMPLATES.presentation.documents.find(document => document[3] === 'checklist')?.[2] || [];
+  const { error } = await db.rpc('northstar_create_undated_project', { project_name: projectName, task_names: checklistItems });
+  if (error) return alert(`The PM project could not be created. Run the latest PM supabase-schema.sql, then try again.\n\n${error.message}`);
+  alert(`${projectName} and ${checklistItems.length} undated tasks were added to PM.`);
 };
 editNodeAction.onclick = () => {
   const node = nodes.find(item => item.id === menuNodeId);

@@ -1,8 +1,10 @@
-# MyMain v1.6.4
+# MyMain v1.7.0
 
 A secure four-level tree workspace with on-demand Logs and Links, dated log entries, and email/password authentication.
 
 MyMain can also create reusable Google Drive workspaces from Presentation, Research Project, Event, or Blank templates, populate starter Google Docs and spaced clickable project checklists, save friendly links beneath the selected node, and add a checklist preview node alongside Links. See `GOOGLE_DRIVE_SETUP.md` for Google authorization setup.
+
+Project checklist items can be copied into the PM app as an undated project from the workspace or Project Checklist node actions menu.
 
 ## Setup
 
