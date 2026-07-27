@@ -887,12 +887,16 @@ async function createGoogleWorkspace(parent, settings) {
   const root = await createDriveResource(settings.name, 'application/vnd.google-apps.folder');
   const resources = [{ ...root, label: `${settings.name} — Drive folder` }];
   const folderIds = new Map();
-  for (const folderName of template.folders) {
+  const folderNames = [...new Set([...template.folders, 'Drafts'])];
+  for (const folderName of folderNames) {
     setMessage(googleWorkspaceMessage, `Creating ${folderName} folder...`);
     const folder = await createDriveResource(folderName, 'application/vnd.google-apps.folder', root.id);
     folderIds.set(folderName, folder.id);
     resources.push({ ...folder, label: `${settings.name} — ${folderName}` });
   }
+  setMessage(googleWorkspaceMessage, 'Creating Draft...');
+  const draft = await createDriveResource('Draft', 'application/vnd.google-apps.document', folderIds.get('Drafts'));
+  resources.push({ ...draft, label: `${settings.name} — Draft` });
   if (settings.starterDocs) {
     for (const [folderName, documentName, starterContent, documentType] of template.documents) {
       setMessage(googleWorkspaceMessage, `Creating ${documentName}...`);
